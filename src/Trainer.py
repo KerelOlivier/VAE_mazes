@@ -93,7 +93,7 @@ class Trainer:
 
             if isinstance(self.model, VAE):
                 # For VAE models, pass x to the model
-                loss = self.model(x)
+                loss = self.model(x=x)
             else:
                 # For conditional VAE models, pass x and y to the model
                 raise NotImplementedError
@@ -127,7 +127,7 @@ class Trainer:
 
                 if isinstance(self.model, VAE):
                     # For VAE models, pass val_x to the model
-                    vloss = self.model(val_x)
+                    vloss = self.model(x=val_x)
                 else:
                     # For conditional VAE models, pass val_x and val_y to the model
                     raise NotImplementedError
