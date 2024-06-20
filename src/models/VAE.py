@@ -29,8 +29,8 @@ class IPrior(nn.Module):
 
 
 class IEncoder(nn.Module):
-    @abstractmethod
     @staticmethod
+    @abstractmethod
     def reparameterization(mu, log_var):
         """
         Reparameterization trick for VAEs.
@@ -166,6 +166,7 @@ class VAE(nn.Module):
             reduction: str; Reduction type ('mean' or 'sum')
         """
         enc_log_prob, z, mu, log_var = self.encoder.log_prob(x=x, y=y, return_components=True)
+
 
         reconstruction_loss = self.decoder.log_prob(x=x, y=y, z=z)
 

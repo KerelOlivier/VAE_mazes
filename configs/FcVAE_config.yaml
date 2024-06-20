@@ -1,0 +1,45 @@
+data:
+  file_path: 'data/1k_dataset.npy'
+
+dataset:
+  # Splits are ~ 60% training, 20% validation, 20% test
+  class: MazeDataset
+
+  transforms:
+    sequential: [ToTensor, Flatten]
+
+  train_params:
+    idx_range: [0, 600]
+
+  validation_params:
+    idx_range: [600, 800]
+
+  test_params:
+    idx_range: [800, 1000]
+
+model:
+  class: VAE
+  encoder_class: FcEncoder
+  decoder_class: FcDecoder
+  prior_class: MogPrior
+  # TODO: Update when encoder/decoder/prior are implemented
+  prior_params:
+    latent_dim: 32
+    num_components: 16
+  encoder_params:
+    input_dim: 15625
+    hidden_dims: [256, 128]
+    latent_dim: 32
+  decoder_params:
+    latent_dim: 32
+    hidden_dims: [128, 256]
+    output_dim: 15625
+
+training:
+  model_name: FcVAE.pt
+  batch_size: 64
+  num_epochs: 100
+  optimizer: Adam
+  optimizer_params:
+    lr: 0.0001
+    weight_decay: 0.0001

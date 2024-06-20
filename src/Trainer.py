@@ -67,7 +67,7 @@ class Trainer:
             )
             if save_model and avg_vloss < best_vloss:
                 best_vloss = avg_vloss
-                torch.save(self.model.state_dict(), "models/saved/" + model_name)
+                torch.save(self.model.state_dict(), "saved_models/" + model_name)
 
     def auto_encode_step(self):
         """
