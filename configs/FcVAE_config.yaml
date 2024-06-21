@@ -22,7 +22,6 @@ model:
   encoder_class: FcEncoder
   decoder_class: FcDecoder
   prior_class: MogPrior
-  # TODO: Update when encoder/decoder/prior are implemented
   prior_params:
     latent_dim: 32
     num_components: 16
