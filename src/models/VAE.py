@@ -126,7 +126,7 @@ class IDecoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, prior:IPrior, encoder:IEncoder, decoder:IDecoder):
+    def __init__(self, prior:IPrior, encoder:IEncoder, decoder:IDecoder, is_conditional=False):
         super(VAE, self).__init__()
         """
         VAE template class.
@@ -135,11 +135,15 @@ class VAE(nn.Module):
             prior: Prior; Prior distribution
             encoder: Encoder; Encoder network
             decoder: Decoder; Decoder network
+            is_conditional: bool; Whether the VAE is conditional (optional)
+                Checked in src/Trainer.py, to know whether to pass x & y to the encoder and decoder
+                or only x
         """
 
         self.prior = prior
         self.encoder = encoder
         self.decoder = decoder
+        self.is_conditional = is_conditional
 
     def sample(self, y=None, batch_size=64):
         """
@@ -154,7 +158,7 @@ class VAE(nn.Module):
 
         return samples
 
-    def forward(self, x, y=None, reduction='mean'):
+    def forward(self, x, y=None, reduction='mean', beta=1.0):
         """
         Compute the negative ELBO for the VAE as follows:
 
@@ -171,6 +175,8 @@ class VAE(nn.Module):
         reconstruction_loss = self.decoder.log_prob(x=x, y=y, z=z)
 
         kl_divergence = (enc_log_prob - self.prior.log_prob(z)).sum(-1)
+
+        kl_divergence *= beta
 
         if reduction == 'sum':
             return (kl_divergence - reconstruction_loss).sum()

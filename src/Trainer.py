@@ -91,12 +91,12 @@ class Trainer:
             # Set gradients to zero for new batch
             self.optimizer.zero_grad()
 
-            if isinstance(self.model, VAE):
-                # For VAE models, pass x to the model
-                loss = self.model(x=x)
+            if self.model.is_conditional:
+                # For conditional models, pass x and y to the model
+                loss = self.model(x=x, y=y)
             else:
-                # For conditional VAE models, pass x and y to the model
-                raise NotImplementedError
+                # For non-conditional models, pass x to the model
+                loss = self.model(x=x)
 
             loss.backward()
 
@@ -125,12 +125,12 @@ class Trainer:
                 
                 val_x, val_y = val_x.to(self.device), val_y.to(self.device)
 
-                if isinstance(self.model, VAE):
-                    # For VAE models, pass val_x to the model
-                    vloss = self.model(x=val_x)
+                if self.model.is_conditional:
+                    # For conditional models, pass x and y to the model
+                    vloss = self.model(x=val_x, y=val_y)
                 else:
-                    # For conditional VAE models, pass val_x and val_y to the model
-                    raise NotImplementedError
+                    # For non-conditional models, pass x to the model
+                    vloss = self.model(x=val_x)
 
                 running_vloss += vloss.item()
                 

@@ -44,7 +44,8 @@ class YamlReader:
         return vae_class(
             prior=prior_class(**oc["model"]["prior_params"]),
             encoder=encoder_class(**oc["model"]["encoder_params"]),
-            decoder=decoder_class(**oc["model"]["decoder_params"])
+            decoder=decoder_class(**oc["model"]["decoder_params"]),
+            is_conditional=oc["model"]["is_conditional"]
         )
     
     def build_datasets(self, oc):
