@@ -126,7 +126,7 @@ class IDecoder(nn.Module):
 
 
 class VAE(nn.Module):
-    def __init__(self, prior:IPrior, encoder:IEncoder, decoder:IDecoder, is_conditional=False):
+    def __init__(self, prior:IPrior, encoder:IEncoder, decoder:IDecoder, is_conditional=False, name="VAE"):
         super(VAE, self).__init__()
         """
         VAE template class.
@@ -138,19 +138,42 @@ class VAE(nn.Module):
             is_conditional: bool; Whether the VAE is conditional (optional)
                 Checked in src/Trainer.py, to know whether to pass x & y to the encoder and decoder
                 or only x
+            name: str; Name of the VAE (optional), used in experiments
         """
 
         self.prior = prior
         self.encoder = encoder
         self.decoder = decoder
         self.is_conditional = is_conditional
+        self.name = name
+
+    @torch.no_grad()
+    def auto_encode(self, x, y=None):
+        """
+        Reconstruct input x, using the encoder/decoder.
+
+        Args:
+            x: torch.Tensor; input tensor x with shape (B,D)
+            y: torch.Tensor; conditioning tensor y with shape (B,D) (optional)
+        
+        Returns:
+            x_hat: torch.Tensor; reconstructed tensor x
+        """
+        z = self.encoder.sample(x=x, y=y)
+        x_hat = self.decoder.sample(z=z, y=y)
+        
+        return x_hat
 
     def sample(self, y=None, batch_size=64):
         """
         Sample from the VAE.
 
         Args:
-            batch_size: int; Number of samples to generate
+            y: torch.Tensor; conditioning tensor y with shape (B,D) (optional)
+            batch_size: int; Number of samples to generate (optional)
+
+        Returns:
+            samples: torch.Tensor; Generated samples from p(x|z) (Decoder), given z ~ P(z) (Prior)
         """
         z = self.prior.sample(batch_size=batch_size)
 
@@ -168,6 +191,9 @@ class VAE(nn.Module):
             x: torch.Tensor; input tensor x with shape (B,D)
             y: torch.Tensor; conditioning tensor y with shape (B,D) (optional)
             reduction: str; Reduction type ('mean' or 'sum')
+
+        Returns:
+            NELBO loss: float; Negative ELBO loss of the VAE
         """
         enc_log_prob, z, mu, log_var = self.encoder.log_prob(x=x, y=y, return_components=True)
 

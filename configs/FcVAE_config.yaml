@@ -21,7 +21,8 @@ model:
   class: VAE
   encoder_class: FcEncoder
   decoder_class: FcDecoder
-  is_conditional: True
+  is_conditional: False
+  name: FcVAE
   prior_class: MogPrior
   prior_params:
     latent_dim: 32
