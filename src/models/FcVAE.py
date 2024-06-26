@@ -83,9 +83,7 @@ class FcEncoder(IEncoder):
         """
         # If x has shape (B,C,H,W), flatten it
         if len(x.shape) == 4: 
-            print(x.shape)
             x = x.view(x.size(0), -1)
-            print(x.shape)
 
         x = self.in_net(x)
 

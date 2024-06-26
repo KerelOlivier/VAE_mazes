@@ -40,7 +40,8 @@ aggr_metrics = {
     'aggr_connected_components' : aggr_connected_components,
     'aggr_count_holes_in_outer_wall' : aggr_count_holes_in_outer_wall,
     'aggr_has_path' : aggr_has_path,
-    'aggr_keeps_shortest_path' : aggr_keeps_shortest_path
+    'aggr_keeps_shortest_path' : aggr_keeps_shortest_path,
+    'aggr_ratio_straight_to_curl_paths' : aggr_ratio_straight_to_curl_paths
 }
 
 dataset_index = {
@@ -92,17 +93,17 @@ def main():
                         default=['FcVAE', 'ConvVAE', 'TransformerVAE'])
     parser.add_argument('--metrics', '-met', type=str, required=False, nargs='+',
                         choices=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
-                                 'aggr_has_path', 'aggr_keeps_shortest_path'],
+                                 'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths'],
                         default=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
-                                 'aggr_has_path', 'aggr_keeps_shortest_path'])
+                                 'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths'])
     parser.add_argument('--split','-s', type=str, required=False, choices=['train', 'val', 'test'], default='test')
     args = parser.parse_args()
 
     match args.experiment:
         case 'style':
+            print(f'Running different style experiment on {args.datasets} datasets with {args.models} models and {len(args.metrics)} metrics.')
             style_experiment(args)
                     
-            print('Running style transfer experiment')
         case 'visualizations':
             print('Running visualizations experiment')
         case 'uncertainty':
@@ -110,10 +111,6 @@ def main():
         case _:
             print('Invalid experiment')
 
-    for dataset in args.datasets:
-        print(f'Running experiment on {dataset} dataset')
 
-    for model in args.models:
-        print(f'Running experiment with {model} model')
 if __name__ == '__main__':
     main()
