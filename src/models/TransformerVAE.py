@@ -7,6 +7,7 @@ import torch
 
 from src.models.VAE import VAE, IEncoder, IDecoder, IPrior
 from torch import nn
+from torch.nn.functional import interpolate
 import numpy as np
 
 
@@ -33,12 +34,21 @@ class TransformerDecoder(IDecoder):
         super().__init__()
 
 
-class Upsample2D(nn.Module):
+class UpSample2D(nn.Module):
     # using solutions to checkerboard artifacts discussed here: https://distill.pub/2016/deconv-checkerboard/
-    def __init__(self):
+    def __init__(self, channels, up_sample_factor=2.0, kernel_size=3):
+        """
+        Upsample 2D convolution
+        :param up_sample_factor: Factor by which to up sample the input image
+        """
         super().__init__()
+        self.up_sample_factor = up_sample_factor
+
+        self.conv = nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=kernel_size // 2)
 
     def forward(self, x):
+        x = interpolate(x, scale_factor=self.up_sample_factor, mode='bilinear')
+        x = self.conv(x)
         return x
 
 
@@ -73,9 +83,10 @@ class TransformerMid(nn.Module):
         self.residual = ResidualBlock(self.in_channels, self.out_channels)
 
         # remaining blocks that don't scale
-        self.blocks = [(AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor),
-                        ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size)) for _ in
-                       range(self.num_blocks)]
+        self.blocks = [
+            (AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor),
+             ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size)) for _ in
+            range(self.num_blocks)]
 
         def forward(x):
             x = self.residual(x)
@@ -105,8 +116,8 @@ class ResidualBlock(nn.Module):
         self.kernel_size = kernel_size
 
         # Layers
-        self.conv1 = nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, padding=1)
-        self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=1)
+        self.conv1 = nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, padding=self.kernel_size//2)
+        self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=self.kernel_size//2)
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
 
     def forward(self, x):
