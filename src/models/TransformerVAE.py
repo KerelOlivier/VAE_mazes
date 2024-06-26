@@ -5,7 +5,7 @@ Combination of ResNet (down/up) blocks and Attention blocks.
 """
 import torch
 
-from src.models.VAE import VAE, IEncoder, IDecoder, IPrior
+from src.models.VAE import IEncoder, IDecoder
 from torch import nn
 from torch.nn.functional import interpolate
 from src.utils.auxiliary import log_normal_diag, log_bernoulli
