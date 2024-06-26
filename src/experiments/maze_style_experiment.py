@@ -111,13 +111,10 @@ class StyleExperiment:
             return model.sample(y=None, batch_size=n), None
         
         random_idx = np.random.choice(np.arange(len(dataset)), size=n)
-
         Y = []
-
         for idx in random_idx:
             _, y = dataset[idx]
             Y.append(y)
-
         y = torch.stack(Y)
         y = y.to(self.device)
 
@@ -170,7 +167,6 @@ class StyleExperiment:
             for idx in random_idx:
                 x, y = mazes[idx]
                 # Convert to square maze
-                
                 x = x.view(int(np.sqrt(x.shape[0])), int(np.sqrt(x.shape[0])))
                 y = y.view(int(np.sqrt(y.shape[0])), int(np.sqrt(y.shape[0])))
                 X.append(x)
