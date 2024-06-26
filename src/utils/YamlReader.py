@@ -45,7 +45,8 @@ class YamlReader:
             prior=prior_class(**oc["model"]["prior_params"]),
             encoder=encoder_class(**oc["model"]["encoder_params"]),
             decoder=decoder_class(**oc["model"]["decoder_params"]),
-            is_conditional=oc["model"]["is_conditional"]
+            is_conditional=oc["model"]["is_conditional"],
+            name=oc["model"]["name"]
         )
     
     def build_datasets(self, oc):
@@ -65,11 +66,11 @@ class YamlReader:
         
         transform = [YamlReader.DATASET_TRANSFORMS[tf] for tf in oc["dataset"]["transforms"]["sequential"]]
         transform = Compose(transform)
-
+        name = oc["dataset"]["name"]
         dataset_class = YamlReader.DATASET_CLASSES[oc["dataset"]["class"]]
-        train_dataset = dataset_class(file_path=file_path, **oc["dataset"]["train_params"], transform=transform)
-        validation_dataset = dataset_class(file_path=file_path, **oc["dataset"]["validation_params"], transform=transform)
-        test_dataset = dataset_class(file_path=file_path, **oc["dataset"]["test_params"], transform=transform)
+        train_dataset = dataset_class(file_path=file_path, **oc["dataset"]["train_params"], transform=transform, name="train "+name)
+        validation_dataset = dataset_class(file_path=file_path, **oc["dataset"]["validation_params"], transform=transform, name="validation "+name)
+        test_dataset = dataset_class(file_path=file_path, **oc["dataset"]["test_params"], transform=transform, name="test "+name)
 
         return train_dataset, validation_dataset, test_dataset
     
