@@ -1,6 +1,7 @@
 from src.experiments.maze_style_experiment import StyleExperiment
 from src.utils import YamlReader
 from src.MazeDataset import MazeDataset
+from src.experiments.aggr_metrics import *
 
 import torch
 
@@ -16,6 +17,12 @@ if __name__ == "__main__":
             model
         ],
         datasets=[dataset],
-        metrics=[]
+        metrics=[
+            aggr_branching_factor,
+            aggr_connected_components,
+            aggr_count_holes_in_outer_wall,
+            aggr_has_path,
+            aggr_keeps_shortest_path,
+        ]
     )
     e.run()

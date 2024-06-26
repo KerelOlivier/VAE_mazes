@@ -36,7 +36,14 @@ def aggr_branching_factor(mazes, aggr='mean', **kwargs):
     Returns:
         float: The branching factor of the dataset
     """
-    return aggr_node_degrees_histogram(mazes, aggr=aggr, **kwargs)
+    sum_node_degrees = 0
+    for _, maze in enumerate(mazes):
+        sum_node_degrees += mean_node_degree(maze)
+    
+    if aggr == 'sum':
+        return sum_node_degrees
+    elif aggr == 'mean':
+        return sum_node_degrees / mazes.shape[0]
 
 def aggr_connected_components(mazes, aggr='mean', **kwargs):
     """
@@ -49,14 +56,14 @@ def aggr_connected_components(mazes, aggr='mean', **kwargs):
     Returns:
         float: The number of connected components in the dataset
     """
-    connected_components = 0
+    n_connected_components = 0
     for _, maze in enumerate(mazes):
-        connected_components += connected_components(maze)
+        n_connected_components += connected_components(maze)
 
     if aggr == 'sum':
-        return connected_components
+        return n_connected_components
     elif aggr == 'mean':
-        return connected_components / mazes.shape[0]
+        return n_connected_components / mazes.shape[0]
 
 def aggr_count_holes_in_outer_wall(mazes, aggr='mean', **kwargs):
     """
@@ -89,14 +96,14 @@ def aggr_cycles(mazes, aggr='mean', **kwargs):
     Returns:
         float: The aggregated number of cycles in the dataset
     """
-    cycles = 0
+    n_cycles = 0
     for _, maze in enumerate(mazes):
-        cycles += cycles(maze)
+        n_cycles += cycles(maze)
 
     if aggr == 'sum':
-        return cycles
+        return n_cycles
     elif aggr == 'mean':
-        return cycles / mazes.shape[0]
+        return n_cycles / mazes.shape[0]
     
 def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
     """
@@ -110,6 +117,8 @@ def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
     Returns:
         float: The number of mazes with a path from the start to the goal
     """
+    if paths is None:
+        return -1
     n_paths = 0
     for i, maze in enumerate(mazes):
         # start id and target id are always on the outer wall
@@ -123,8 +132,8 @@ def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
         exits = np.where(paths[i] * outer_wall_mask == 1)
         if len(exits) == 0:
             continue
-        start_idx = exits[0][0]
-        target_idx = exits[1][0]
+        start_idx = exits[0][0], exits[1][0]
+        target_idx = exits[0][1], exits[1][1]
 
 
         if has_path(maze, start_idx, target_idx):
@@ -135,7 +144,7 @@ def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
     elif aggr == 'mean':
         return n_paths / mazes.shape[0]
     
-def aggr_keeps_shortest_path(mazes, paths, aggr='sum', **kwargs):
+def aggr_keeps_shortest_path(mazes, paths, aggr='mean', **kwargs):
     """
     Check in how many mazes of a dataset the shortest path (y) is kept after generation
 
@@ -147,6 +156,9 @@ def aggr_keeps_shortest_path(mazes, paths, aggr='sum', **kwargs):
     Returns:
         float: The aggregated number of mazes where the shortest path is kept
     """
+    if paths is None:
+        return -1
+    
     n_kept = 0
     for i, maze in enumerate(mazes):
         if keeps_shortest_path(maze, paths[i]):

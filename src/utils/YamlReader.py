@@ -45,7 +45,8 @@ class YamlReader:
             prior=prior_class(**oc["model"]["prior_params"]),
             encoder=encoder_class(**oc["model"]["encoder_params"]),
             decoder=decoder_class(**oc["model"]["decoder_params"]),
-            is_conditional=oc["model"]["is_conditional"]
+            is_conditional=oc["model"]["is_conditional"],
+            name=oc["model"]["name"]
         )
     
     def build_datasets(self, oc):

@@ -75,7 +75,6 @@ class StyleExperiment:
                 # compute statistics for Mij samples/reconstructions 
             if isinstance(self.models[i], tuple):
                 # For each model in the tuple, compute statistics for samples and reconstructions
-                print("we have a tuple on our hands")
                 for model in self.models[i]:
                     samples, sample_paths = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                     reconstructions, reconstruction_paths = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
@@ -84,7 +83,6 @@ class StyleExperiment:
             # otherwise, compute statistics for Mi samples/reconstructions
             else:
                 # For each model, compute statistics for samples and reconstructions
-                print("no tuple here")
                 model = self.models[i]
                 samples, sample_paths = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                 reconstructions, reconstruction_paths = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
@@ -172,14 +170,18 @@ class StyleExperiment:
                 X.append(x)
                 Y.append(y)
             mazes = np.stack(X)
+            mazes = mazes.astype(np.int32)
             paths = np.stack(Y)
+            paths = paths.astype(np.int32)
         else:
             mazes = mazes.detach().cpu().numpy()
             width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
             mazes = mazes.reshape(-1, width, height)
+            mazes = mazes.astype(np.int32)
             if paths is not None:
                 paths = paths.detach().cpu().numpy()
                 paths = paths.reshape(-1, width, height)
+                paths = paths.astype(np.int32)
 
         # Compute the metrics for the mazes
         row_list = [name]

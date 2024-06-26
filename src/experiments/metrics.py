@@ -31,6 +31,8 @@ def connected_components(maze:np.ndarray):
     # Initialize the number of connected components
     n_connected_components = 0
 
+    visited_nodes = set()
+
     while len(unvisited_nodes) > 0:
         # Increment the number of connected components
         n_connected_components += 1
@@ -42,7 +44,10 @@ def connected_components(maze:np.ndarray):
         # DFS until no more cells can be reached from current connected component
         while stack:
             node_idx = stack.pop()
+            if node_idx in visited_nodes:
+                continue
             unvisited_nodes.remove(node_idx)
+            visited_nodes.add(node_idx)
             # check for neighbors
             i, j = node_idx
             if i > 0 and (i-1, j) in unvisited_nodes:
