@@ -25,21 +25,21 @@ model:
   name: FcVAE
   prior_class: MogPrior
   prior_params:
-    latent_dim: 32
+    latent_dim: 64
     num_components: 16
   encoder_params:
     input_dim: 16641
-    hidden_dims: [256, 128]
-    latent_dim: 32
+    hidden_dims: [512, 256, 128]
+    latent_dim: 64
   decoder_params:
-    latent_dim: 32
-    hidden_dims: [128, 256]
+    latent_dim: 64
+    hidden_dims: [128, 256, 512]
     output_dim: 16641
 
 training:
   model_name: fractal/FcVAE.pt
   batch_size: 64
-  num_epochs: 100
+  num_epochs: 250
   optimizer: Adam
   optimizer_params:
     lr: 0.0001

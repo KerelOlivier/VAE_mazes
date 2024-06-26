@@ -9,6 +9,19 @@ import torch
 from torchvision.transforms import ToTensor, Compose
 
 
+def partial(func, *args, **keywords):
+    """
+    Return a new partial object which when called will behave like func called with the positional arguments args and keyword arguments keywords.
+    """
+    def newfunc(*fargs, **fkeywords):
+        newkeywords = keywords.copy()
+        newkeywords.update(fkeywords)
+        return func(*(args + fargs), **newkeywords)
+    newfunc.func = func
+    newfunc.args = args
+    newfunc.keywords = keywords
+    return newfunc
+
 class YamlReader:
     # TODO: Update when new classes are added
     DATASET_CLASSES = {"MazeDataset": MazeDataset}
@@ -17,7 +30,8 @@ class YamlReader:
     ENCODER_CLASSES = {"FcEncoder": FcEncoder}
     DECODER_CLASSES = {"FcDecoder": FcDecoder}
     OPTIMIZER_DICT = {"Adam": torch.optim.Adam}
-    DATASET_TRANSFORMS = {"ToTensor": torch.FloatTensor, "Flatten": torch.flatten, "Normalize": torch.nn.functional.normalize, "Compose": torch.nn.Sequential}
+    DATASET_TRANSFORMS = {"ToTensor": torch.FloatTensor, "Flatten": torch.flatten, "Normalize": torch.nn.functional.normalize, "Compose": torch.nn.Sequential,
+                          "Unsqueeze": partial(torch.unsqueeze, dim=0)}
 
     def __init__(self, path):
         self.path = path

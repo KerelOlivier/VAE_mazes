@@ -6,7 +6,7 @@ dataset:
   class: MazeDataset
   name: RandomizedDFS
   transforms:
-    sequential: [ToTensor]
+    sequential: [ToTensor, Unsqueeze]
 
   train_params:
     idx_range: [0, 6000]

@@ -6,7 +6,6 @@ from src.experiments.aggr_metrics import *
 from src.utils import YamlReader
 
 dataset_configs = {
-    'wilson' : 'configs/wilson/dataset.yaml',
     'dfs' : 'configs/dfs/dataset.yaml',
     'prim' : 'configs/prim/dataset.yaml',
     'fractal' : 'configs/fractal/dataset.yaml',
@@ -19,11 +18,6 @@ model_configs = {
 }
 
 trained_model_paths = {
-    'wilson' : {
-        'FcVAE' : 'saved_models/wilson/FcVAE.pt',
-        'ConvVAE' : 'saved_models/wilson/ConvVAE.pt',
-        'TransformerVAE' : 'saved_models/wilson/TransformerVAE.pt'
-    },
     'dfs' : {
         'FcVAE' : 'saved_models/dfs/FcVAE.pt',
         'ConvVAE' : 'saved_models/dfs/ConvVAE.pt',
@@ -73,6 +67,7 @@ def style_experiment(args):
             yr.set_path(model_configs[model_name])
             model = yr.build_VAE(yr.read())
             model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
+            model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
             models.append(model)
         # turn models list into a tuple
         models = tuple(models)

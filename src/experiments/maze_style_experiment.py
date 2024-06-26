@@ -31,6 +31,7 @@ class StyleExperiment:
         - Keeps path y in final sample
         - TODO: AVERAGE SHORTEST PATH LENGTH
         - TODO: NUMBER OF CYCLES
+        - TODO: CURL TO STRAIGHT RATIO
 
         Compute the same statistics for n>=1 reconstructions
 
@@ -78,8 +79,8 @@ class StyleExperiment:
                 for model in self.models[i]:
                     samples, sample_paths = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                     reconstructions, reconstruction_paths = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-                    sample_rows.append(self.compute_stats(samples, self.metrics, name=f"{model.name} samples"))
-                    reconstruction_rows.append(self.compute_stats(reconstructions, self.metrics, name=f"{model.name} reconstructions"))
+                    sample_rows.append(self.compute_stats(samples, sample_paths, self.metrics, name=f"{model.name} samples"))
+                    reconstruction_rows.append(self.compute_stats(reconstructions, reconstruction_paths, self.metrics, name=f"{model.name} reconstructions"))
             # otherwise, compute statistics for Mi samples/reconstructions
             else:
                 # For each model, compute statistics for samples and reconstructions
@@ -158,7 +159,6 @@ class StyleExperiment:
             kwargs: dict; Additional arguments to pass to the metrics
         """
         if isinstance(mazes, MazeDataset):
-            print("test")
             # Select n random samples from the dataset
             random_idx = np.random.choice(np.arange(len(mazes)), size=self.n)
             X = []
@@ -172,24 +172,29 @@ class StyleExperiment:
                     y = y.view(int(np.sqrt(y.shape[0])), int(np.sqrt(y.shape[0])))
                 X.append(x)
                 Y.append(y)
+                
             mazes = np.stack(X)
             mazes = mazes.astype(np.int32)
+            mazes = mazes.squeeze(1)
             paths = np.stack(Y)
             paths = paths.astype(np.int32)
+            paths = paths.squeeze(1)
         else:
-            print("other")
             mazes = mazes.detach().cpu().numpy()
             if len(mazes.shape) == 2:
-                print("reshaping")
                 width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
                 mazes = mazes.reshape(-1, width, height)
                 mazes = mazes.astype(np.int32)
+                if len(mazes.shape) == 4:
+                    mazes = mazes.squeeze(1)
+
             if paths is not None:
                 paths = paths.detach().cpu().numpy()
                 paths = paths.reshape(-1, width, height)
                 paths = paths.astype(np.int32)
-        print(mazes.shape)
-        print(paths.shape)
+                if len(paths.shape) == 4:
+                    paths = paths.squeeze(1)
+
         # Compute the metrics for the mazes
         row_list = [name]
         for metric in metrics:
@@ -197,3 +202,4 @@ class StyleExperiment:
         
         row = self.row_template(*row_list)
         return row
+    
