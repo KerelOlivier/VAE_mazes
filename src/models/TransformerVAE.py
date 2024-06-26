@@ -69,7 +69,6 @@ class TransformerEncoder(IEncoder):
         return mu + std * eps
 
     def encode(self, x, y=None):
-        # TODO: Ask Alec about order of self attention and conditioning
         # Add conditional
         if y is not None:
             x += y
@@ -150,25 +149,70 @@ class DownSample2D(nn.Module):
 
 class TransformerDecoder(IDecoder):
     def __init__(self,
-                 channel_sizes: [int],
-                 num_blocks: int,
-                 up_sample_steps,
-                 kernel_size: int = 3):
+                 input_shape: (int, int, int),
+                 conditional_shape: (int, int, int),
+                 block_out_channels=(64, 1,),
+                 layers_per_block=2,
+                 kernel_size=3,
+                 up_sample_factor=2,
+                 ):
         """
-        :param channel_sizes: The sequential number of channels
-        :param num_blocks: number of residual blocks per up sampling
-        :param kernel_size: kernel size of the residual blocks
+        :param input_shape: expected input shape of decoder, (channels, height, width)
+        :param conditional_shape: shape of the conditional, (channels, height, width)
+        :param block_out_channels: number of output channels for
+        each decoder block, last one must have the number of channels of your output
+        :param layers_per_block: number of residual blocks per decoder block
+        :param kernel_size: kernel size of the decoder
+        :param up_sample_factor: up sampling factor
         """
         super().__init__()
 
+        self.input_shape = input_shape
+
+        # Conditional linear projection
+        self.con_lin = nn.Linear(conditional_shape[0] * conditional_shape[1] * conditional_shape[2],
+                                 input_shape[0] * input_shape[1] * input_shape[2])
+
+        # Create Decoder blocks
+        self.blocks = []
+        if len(block_out_channels) > 0:
+            input_channels = input_shape[0]
+            for output_channels in block_out_channels:
+                self.blocks.append(DecoderBlock(input_channels,
+                                                output_channels,
+                                                layers_per_block,
+                                                kernel_size,
+                                                up_sample_factor))
+                input_channels = output_channels
+
+    def decode(self, z, y=None):
+        # Add conditional
+        if y is not None:
+            z += self.con_lin(y)
+
+        # Reshape z
+        z = self.reshape(z.shape[0], self.input_shape[0], self.input_shape[1], self.input_shape[2])
+
+        # Run decoder
+        for block in self.blocks:
+            z = block.decode(z)
+
+        z = torch.sigmoid(z)
+
+        return z
+
     def sample(self, z, y=None):
-        pass
+        mu = self.decode(z, y)
+        x_new = torch.bernoulli(mu)
+
+        return x_new
 
     def log_prob(self, x, z, y=None):
-        pass
+        mu = self.decode(z, y)
+        return log_bernoulli(x, mu, reduction='sum')
 
-    def forward(self, x):
-        return x
+    def forward(self, z, y=None):
+        return self.log_prob(z, y)
 
 
 class DecoderBlock(nn.Module):
