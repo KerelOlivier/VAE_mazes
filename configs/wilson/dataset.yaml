@@ -1,0 +1,18 @@
+data:
+  file_path: 'data/10k_Wilson.npy'
+
+dataset:
+  # Splits are ~ 60% training, 20% validation, 20% test
+  class: MazeDataset
+  name: Wilson
+  transforms:
+    sequential: [ToTensor]
+
+  train_params:
+    idx_range: [0, 6000]
+
+  validation_params:
+    idx_range: [6000, 8000]
+
+  test_params:
+    idx_range: [8000, 10000]

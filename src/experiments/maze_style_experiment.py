@@ -92,9 +92,9 @@ class StyleExperiment:
         # save sample and reconstruction statistics to csv
         sample_df = pd.DataFrame(sample_rows)
         reconstruction_df = pd.DataFrame(reconstruction_rows)
-
-        sample_df.to_csv(self.path.replace(".csv", "_samples.csv"))
-        reconstruction_df.to_csv(self.path.replace(".csv", "_reconstructions.csv"))
+        # append the results to the csv file
+        sample_df.to_csv(self.path, mode='a', header=True)
+        reconstruction_df.to_csv(self.path, mode='a', header=True)
 
     def make_n_samples(self, model:nn.Module, dataset:MazeDataset, n:int=100):
         """
@@ -158,6 +158,7 @@ class StyleExperiment:
             kwargs: dict; Additional arguments to pass to the metrics
         """
         if isinstance(mazes, MazeDataset):
+            print("test")
             # Select n random samples from the dataset
             random_idx = np.random.choice(np.arange(len(mazes)), size=self.n)
             X = []
@@ -165,8 +166,10 @@ class StyleExperiment:
             for idx in random_idx:
                 x, y = mazes[idx]
                 # Convert to square maze
-                x = x.view(int(np.sqrt(x.shape[0])), int(np.sqrt(x.shape[0])))
-                y = y.view(int(np.sqrt(y.shape[0])), int(np.sqrt(y.shape[0])))
+                if len(x.shape) == 1:
+                    x = x.view(int(np.sqrt(x.shape[0])), int(np.sqrt(x.shape[0])))
+                if len(y.shape) == 1:
+                    y = y.view(int(np.sqrt(y.shape[0])), int(np.sqrt(y.shape[0])))
                 X.append(x)
                 Y.append(y)
             mazes = np.stack(X)
@@ -174,15 +177,19 @@ class StyleExperiment:
             paths = np.stack(Y)
             paths = paths.astype(np.int32)
         else:
+            print("other")
             mazes = mazes.detach().cpu().numpy()
-            width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
-            mazes = mazes.reshape(-1, width, height)
-            mazes = mazes.astype(np.int32)
+            if len(mazes.shape) == 2:
+                print("reshaping")
+                width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
+                mazes = mazes.reshape(-1, width, height)
+                mazes = mazes.astype(np.int32)
             if paths is not None:
                 paths = paths.detach().cpu().numpy()
                 paths = paths.reshape(-1, width, height)
                 paths = paths.astype(np.int32)
-
+        print(mazes.shape)
+        print(paths.shape)
         # Compute the metrics for the mazes
         row_list = [name]
         for metric in metrics:

@@ -32,7 +32,7 @@ class FcEncoder(IEncoder):
         Make layers for the encoder.
         """
         # Initialize input size
-        input_size = self.input_dim
+        input_size = self.hidden_dims[0]
         for h_dim in self.hidden_dims:
             self.layers.append(nn.Linear(input_size, h_dim))
             self.layers.append(nn.SiLU())
@@ -40,6 +40,16 @@ class FcEncoder(IEncoder):
 
         # Sequential model
         self.forward_net = nn.Sequential(*self.layers)
+
+        self.in_net = nn.Sequential(
+            nn.Linear(self.input_dim, self.hidden_dims[0]),
+            nn.SiLU()
+        )
+
+        self.conditional_net = nn.Sequential(
+            nn.Linear(self.input_dim, self.hidden_dims[0]),
+            nn.SiLU()
+        )
 
     @staticmethod
     def reparameterization(mu, log_var):
@@ -71,8 +81,20 @@ class FcEncoder(IEncoder):
             mu: torch.Tensor; mean of the distribution with shape (B,L)
             log_var: torch.Tensor; log variance of the distribution with shape (B,L)
         """
+        # If x has shape (B,C,H,W), flatten it
+        if len(x.shape) == 4: 
+            print(x.shape)
+            x = x.view(x.size(0), -1)
+            print(x.shape)
+
+        x = self.in_net(x)
+
         if y is not None:
-            x = torch.cat([x, y], dim=-1)
+            # If y has shape (B,C,H,W), flatten it
+            if len(y.shape) == 4:
+                y = y.view(y.size(0), -1)
+            y = self.conditional_net(y)
+            x = x + y
         
         h = self.forward_net(x)
         mu = self.to_mu(h)
@@ -167,6 +189,11 @@ class FcDecoder(IDecoder):
         # Sequential model
         self.forward_net = nn.Sequential(*self.layers)
 
+        self.conditional_net = nn.Sequential(
+            nn.Linear(self.output_dim, self.latent_dim),
+            nn.SiLU()
+        )
+
     def decode(self, z, y=None):
         """
         Decode the latent variable z into the output space.
@@ -178,8 +205,16 @@ class FcDecoder(IDecoder):
         Returns:
             x: torch.Tensor; output tensor x
         """
+        # If z has shape (B,C,H,W), flatten it
+        if len(z.shape) == 4: 
+            z = z.view(z.size(0), -1)
+
         if y is not None:
-            z = torch.cat([z, y], dim=-1)
+            # If y has shape (B,C,H,W), flatten it
+            if len(y.shape) == 4:
+                y = y.view(y.size(0), -1)
+            y = self.conditional_net(y)
+            z = z + y
         
         x = self.forward_net(z)
         x = self.to_output(x)

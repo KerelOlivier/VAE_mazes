@@ -21,7 +21,7 @@ model:
   class: VAE
   encoder_class: FcEncoder
   decoder_class: FcDecoder
-  is_conditional: False
+  is_conditional: True
   name: FcVAE
   prior_class: MogPrior
   prior_params:
@@ -37,7 +37,7 @@ model:
     output_dim: 16641
 
 training:
-  model_name: FcVAE.pt
+  model_name: fractal/FcVAE.pt
   batch_size: 64
   num_epochs: 100
   optimizer: Adam

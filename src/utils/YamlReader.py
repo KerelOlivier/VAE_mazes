@@ -22,6 +22,9 @@ class YamlReader:
     def __init__(self, path):
         self.path = path
 
+    def set_path(self, path):
+        self.path = path
+
     def read(self):
         return OmegaConf.load(self.path)
     
