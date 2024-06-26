@@ -8,6 +8,7 @@ import torch
 from src.models.VAE import VAE, IEncoder, IDecoder, IPrior
 from torch import nn
 from torch.nn.functional import interpolate
+from src.utils.auxiliary import log_normal_diag, log_bernoulli
 import numpy as np
 
 
@@ -16,24 +17,96 @@ import numpy as np
 #################
 
 class TransformerEncoder(IEncoder):
+    def __init__(self,
+                 in_channels=1,
+                 out_channels=64,
+                 block_out_channels=(64,),
+                 layers_per_block=2,
+                 kernel_size=3,
+                 down_sample_factor=2,
+                 num_heads=16):
+        super().__init__()
+        """
+        Encoder part for the transformer VAE
+        
+        :param in_channels: number of input channels
+        :param out_channels: number of output channels
+        :param block_out_channels: number of output channels for each encoder block
+        :param layers_per_block: number of residual blocks per encoder block
+        :param kernel_size: kernel size for the residual blocks
+        :param down_sample_factor: how fast to down sample between each step
+        :param num_heads: number of heads for multi-head attention    
+        """
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.layers_per_block = layers_per_block
+
+        # Create the encoder blocks
+        self.blocks = []
+        if len(block_out_channels) > 0:
+            input_channels = in_channels
+            for output_channels in block_out_channels:
+                self.blocks.append(TransformerEncoderBlock(input_channels,
+                                                           output_channels,
+                                                           layers_per_block,
+                                                           kernel_size,
+                                                           down_sample_factor))
+                input_channels = output_channels
+
+        # Create the attention middle block
+        self.middle = TransformerMidBlock(block_out_channels[-1],
+                                          out_channels,
+                                          layers_per_block,
+                                          num_heads,
+                                          down_sample_factor,
+                                          kernel_size)
+
     @staticmethod
     def reparameterization(mu, log_var):
-        pass
+        std = torch.exp(0.5 * log_var)
+        eps = torch.randn_like(input=mu)
+
+        return mu + std * eps
 
     def encode(self, x, y=None):
-        pass
+        # TODO: Ask Alec about order of self attention and conditioning
+        # Add conditional
+        if y is not None:
+            x += y
+
+        # Encoder
+        for block in self.blocks:
+            x = block(x, y)
+
+        # Middle block
+        x = self.middle(x)
+
+        # Flatten for ease of use
+        batch_size = x.shape[0]
+        x = x.reshape(batch_size, -1)
+
+        # Split output into mu an log_var tensors
+        mu, log_var = x.chunk(2, dim=1)
+        return mu, log_var
 
     def sample(self, x, y=None, return_components=False):
-        pass
+        mu, log_var = self.encode(x, y)
+
+        z = self.reparameterize(mu, log_var)
+
+        if return_components:
+            return z, mu, log_var
+        return z
 
     def log_prob(self, x, y=None, return_components=False):
-        pass
+        z, mu, log_var = self.sample(x)
+
+        if return_components:
+            return log_normal_diag(z, mu, log_var), z, mu, log_var
+        return log_normal_diag(z, mu, log_var)
 
     def forward(self, x, y=None):
-        pass
-
-    def __init__(self):
-        super().__init__()
+        return self.log_prob(x, y)
 
 
 class TransformerEncoderBlock(nn.Module):
@@ -152,7 +225,7 @@ class UpSample2D(nn.Module):
 # UNet mid block #
 ##################
 
-class TransformerMid(nn.Module):
+class TransformerMidBlock(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
