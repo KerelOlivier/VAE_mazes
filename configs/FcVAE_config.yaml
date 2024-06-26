@@ -4,7 +4,7 @@ data:
 dataset:
   # Splits are ~ 60% training, 20% validation, 20% test
   class: MazeDataset
-
+  name: FractalTessellation
   transforms:
     sequential: [ToTensor, Flatten]
 
