@@ -5,8 +5,32 @@ data/*
 results/*
 !results/.gitkeep
 
+figures/*
+!figures/maze_and_path.png
+!figures/maze.png
+!figures/path.png
+!figures/.gitkeep
+!figures/dfs
+figures/dfs/*
+!figures/dfs/.gitkeep
+!figures/prim
+figures/prim/*
+!figures/prim/.gitkeep
+!figures/fractal
+figures/fractal/*
+!figures/fractal/.gitkeep
+
 saved_models/*
-!saved_models/.gitkeep
+!saved_models/dfs
+saved_models/dfs/*
+!saved_models/dfs/.gitkeep
+!saved_models/prim/
+saved_models/prim/*
+!saved_models/prim/.gitkeep
+!saved_models/fractal/
+saved_models/fractal/*
+!saved_models/fractal/.gitkeep
+
 
 # Created by https://www.toptal.com/developers/gitignore/api/vim,pycharm,visualstudiocode,python,venv
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,pycharm,visualstudiocode,python,venv
