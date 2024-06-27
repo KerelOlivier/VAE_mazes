@@ -1,12 +1,12 @@
 data:
-  file_path: 'data/10k_dataset.npy'
+  file_path: 'data/10k_Fractal.npy'
 
 dataset:
   # Splits are ~ 60% training, 20% validation, 20% test
   class: MazeDataset
-
+  name: FractalTessellation
   transforms:
-    sequential: [ToTensor, Flatten]
+    sequential: [ToTensor, Unsqueeze]
 
   train_params:
     idx_range: [0, 6000]
@@ -22,23 +22,29 @@ model:
   encoder_class: TransformerEncoder
   decoder_class: TransformerDecoder
   is_conditional: True
+  name: TransformerVAE
   prior_class: MogPrior
   prior_params:
-    latent_dim: 32
+    latent_dim: 64
     num_components: 16
   encoder_params:
-    input_dim: 15625
-    hidden_dims: [256, 128]
-    latent_dim: 32
+    input_dim: [1,129,129]
+    out_channels: [512, 256, 128, 64]
+    layers_per_block: 2
+    kernel_size: 3
+    down_sample_factor: 2
+    num_heads: 16
   decoder_params:
-    latent_dim: 32
-    hidden_dims: [128, 256]
-    output_dim: 15625
+    input_shape: [64, 8, 8]
+    output_shapes: [[256, 16, 16],[128, 32, 32],[64, 64, 64],[1, 129, 129]]
+    conditional_shape: [1,129,129]
+    layers_per_block: 2
+    kernel_size: 3
 
 training:
-  model_name: FcVAE.pt
-  batch_size: 64
-  num_epochs: 100
+  model_name: fractal/TransformerVAE.pt
+  batch_size: 32
+  num_epochs: 250
   optimizer: Adam
   optimizer_params:
     lr: 0.0001

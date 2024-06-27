@@ -52,7 +52,7 @@ class TransformerEncoder(IEncoder):
 
         # Create the attention middle block
         self.middle = TransformerMidBlock(out_channels[-1],
-                                          out_channels,
+                                          out_channels[-1],
                                           layers_per_block,
                                           num_heads,
                                           down_sample_factor,
@@ -72,7 +72,7 @@ class TransformerEncoder(IEncoder):
 
         # Encoder
         for block in self.blocks:
-            x = block(x, y)
+            x = block(x)
 
         # Middle block
         x = self.middle(x)
@@ -154,9 +154,7 @@ class TransformerDecoder(IDecoder):
                  ):
         """
         :param input_shape: expected input shape of decoder, (channels, height, width)
-        :param output_shape: expected shape of the output image, (channels, height, width)
         :param conditional_shape: shape of the conditional, (channels, height, width)
-        :param block_out_channels: number of output channels for
         each decoder block, last one must have the number of channels of your output
         :param layers_per_block: number of residual blocks per decoder block
         :param kernel_size: kernel size of the decoder
@@ -249,7 +247,7 @@ class UpSample2D(nn.Module):
     def __init__(self, channels, output_shape=(129, 129), kernel_size=3):
         """
         Up sample 2D convolution
-        :param up_sample_factor: Factor by which to up sample the input image
+        :param output_shape: dimensions to which to up sample the input
         """
         super().__init__()
         self.output_shape = output_shape
@@ -323,16 +321,17 @@ class ResidualBlock(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-
         # Layers
         self.conv1 = nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
 
     def forward(self, x):
-        assert x.shape[0] == self.in_channels
+        print(next(self.parameters()).is_cuda)
+        print("x:", x.device, self.in_channels, self.out_channels)
+        assert x.shape[1] == self.in_channels
         z = self.conv_con(x)  # residual
-
+        print("z:", z.device)
         y = self.conv1(x)
         y = y.relu()
         y = self.conv2(y)
