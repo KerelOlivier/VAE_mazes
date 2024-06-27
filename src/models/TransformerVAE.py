@@ -83,6 +83,7 @@ class TransformerEncoder(IEncoder):
 
         # Split output into mu an log_var tensors
         mu, log_var = x.chunk(2, dim=1)
+
         return mu, log_var
 
     def sample(self, x, y=None, return_components=False):
@@ -184,6 +185,8 @@ class TransformerDecoder(IDecoder):
         self.blocks = nn.ModuleList(self.blocks)
 
     def decode(self, z, y=None):
+        p = z
+        print("0|\t", torch.min(p).item(), torch.max(p).item())
         # Add conditional
         if y is not None:
             # reshape
@@ -192,15 +195,19 @@ class TransformerDecoder(IDecoder):
             z += tmp
 
         # Reshape z
-        z = torch.reshape(z, (z.shape[0], self.input_shape[0]//2, self.input_shape[1], self.input_shape[2]))
-
-
+        z = torch.reshape(z, (z.shape[0], self.input_shape[0] // 2, self.input_shape[1], self.input_shape[2]))
+        p = z
+        print("1|\t", torch.min(p).item(), torch.max(p).item())
 
         # Run decoder
         for block in self.blocks:
             z = block(z)
+            p = z
+            print("2|\t", torch.min(p).item(), torch.max(p).item())
 
+        p = z
         z = torch.sigmoid(z)
+        print("3|\t", torch.min(p).item(), torch.max(p).item())
         return z
 
     def sample(self, z, y=None):
@@ -211,7 +218,12 @@ class TransformerDecoder(IDecoder):
 
     def log_prob(self, x, z, y=None):
         mu = self.decode(z, y)
-        return log_bernoulli(x, mu, reduction='sum')
+        print("MU:", mu.shape, "X:", x.shape)
+        x_new = torch.flatten(x, 1)
+        mu_new = torch.flatten(mu, 1)
+        print("MU*:", mu_new.shape, "X*:", x_new.shape)
+        print("MU: [", mu_new.min().item(), ", ", mu_new.max().item(), "]")
+        return log_bernoulli(x_new, mu_new, reduction='sum')
 
     def forward(self, z, y=None):
         return self.log_prob(z, y)
@@ -259,11 +271,11 @@ class UpSample2D(nn.Module):
         """
         super().__init__()
         self.output_shape = output_shape
-
+        self.up = nn.Upsample(size=self.output_shape, mode='bilinear')
         self.conv = nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=kernel_size // 2)
 
     def forward(self, x):
-        x = interpolate(x, size=self.output_shape, mode='bilinear')
+        x = self.up(x)
         x = self.conv(x)
         return x
 
@@ -337,15 +349,22 @@ class ResidualBlock(nn.Module):
         self.conv1 = nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
-
+        # normalizations
+        self.norm1 = nn.GroupNorm(num_groups=1, num_channels=self.in_channels)
+        self.norm2 = nn.GroupNorm(num_groups=1, num_channels=self.out_channels)
     def forward(self, x):
         assert x.shape[1] == self.in_channels
-        z = self.conv_con(x)  # residual
-        y = self.conv1(x)
-        y = y.relu()
-        y = self.conv2(y)
-        y += z
-        return y.relu()
+        residual = self.conv_con(x)  # residual
+        x = self.norm1(x)
+        x = nn.functional.silu(x)
+
+        x = self.conv1(x)
+        self.norm2(x)
+        x = nn.functional.silu(x)
+
+        x = self.conv2(x)
+        x += residual
+        return x
 
 
 class AttentionBlock(nn.Module):
