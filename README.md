@@ -1,4 +1,5 @@
 # VAE maze generation
+>For the final assignment of the Generative AI Models course at TU/e, we implement a novel approach & evaluations for utilizing probabilistic models in maze generation. This repository contains the implementation of our approach.
 <table>
   <tr>
     <td>Maze with solution</td>
@@ -12,9 +13,13 @@
   </tr>
 </table>
 
-## Introduction
+## Maze generation with conditional VAEs
 
+Generating mazes is no trivial task. There are many complicated and interesting algorithms, each generating unique mazes with different characteristics.
 
+Inspired by the recent explosion in interest and quality of probabilistic (generative) models for image generation tasks, we create a novel approach for (conditional) maze generation with (Conditional) Variational Autoencoders.
+
+Furthermore, we provide some new evaluation techniques for investigating the perceptual quality of generated mazes, and a framework for uncertainty quantification.
 
 ## Formal introduction
 Given a dataset of $n$ mazes $X \sim p_\text{data}$ where each individual maze $x \in X$ consists of $D\times D$ pixels $x \in \{ 0, 1 \}^{D \times D}$. A pixel value of 1 indicates there is a wall, and 0 indicates no wall. 
