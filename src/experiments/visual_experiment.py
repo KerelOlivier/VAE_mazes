@@ -38,6 +38,9 @@ class VisualExperiment:
             "Prim":"prim",
             "FractalTessellation":"fractal"
         }
+        # If all datasets are included, plot a cover page
+        if len(self.datasets) == 3:
+            self.plot_cover_page(self.datasets)
         # Iterate over the datasets
         for dataset in self.datasets:
             # For each dataset, iterate over the models
@@ -83,6 +86,81 @@ class VisualExperiment:
                     self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                     self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
     
+    def plot_cover_page(self, datasets:list[MazeDataset], title="Style of maze algorithms") -> None:
+        """
+        Plot a cover page for the visual experiment
+
+        Args:
+            datasets: list[MazeDataset]; The datasets to include in the cover page
+        """
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
+        fig, axs = plt.subplots(2, 2, figsize=(20, 20))
+        
+        for i, ax in enumerate(axs.flat):
+            if i == 3:
+                break
+            idx = np.random.randint(0, len(datasets))
+            maze = datasets[i].__getitem__(idx)[0]
+            maze = maze.squeeze(0)
+            ax.imshow(maze, cmap='gray')
+            ax.set_title(datasets[i].name.split(" ")[1], fontsize=25)
+
+        maze, path = datasets[0].__getitem__(0)
+        maze = maze.squeeze(0)
+        path = path.squeeze(0)
+        ax = self.plot_maze_and_path(axs[1, 1], maze, path, datasets[0].name.split(" ")[1], self.path, "example_maze.png")
+        axs[1, 1] = ax
+        
+        fig.suptitle(title, fontsize=40)
+        plt.savefig(self.path+"cover_page.png")
+        plt.close()
+
+    def plot_maze_and_path(self, ax, maze:np.ndarray, path:np.ndarray, title:str, file_dir:str, file_name:str) -> None:
+        # plot 1s as black squares
+        # and 0s as white squares
+        # use inverse cmap to make 0s white
+        ax.imshow(maze, cmap='gray_r')
+        # make tuples from neighboring 1's in the path
+        # and plot them as a line
+        for i in range(1, path.shape[0]-1):
+            for j in range(1, path.shape[1]-1):
+                if path[i, j] == 1:
+                    if path[i-1, j] == 1:
+                        ax.plot([j, j], [i-1, i], 'r')
+                    if path[i+1, j] == 1:
+                        ax.plot([j, j], [i, i+1], 'r')
+                    if path[i, j-1] == 1:
+                        ax.plot([j-1, j], [i, i], 'r')
+                    if path[i, j+1] == 1:
+                        ax.plot([j, j+1], [i, i], 'r')
+
+        # for the entrance and exit points
+        # also draw the line to the edge of the maze
+        # to make it look more complete
+        
+        # find the entrance and exit points (1s on the edge of the maze)
+
+        for i in range(path.shape[0]):
+            if path[i, 0] == 1:
+                entrance = (0, i)
+                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'r')
+            if path[i, -1] == 1:
+                exit_ = (path.shape[1]-1, i)
+                ax.plot([exit_[0], exit_[0]+0.5], [exit_[1], exit_[1]], 'r')
+
+        for j in range(path.shape[1]):
+            if path[0, j] == 1:
+                entrance = (j, 0)
+                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'r')
+            if path[-1, j] == 1:
+                exit_ = (j, path.shape[0]-1)
+                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'r')
+        
+        # draw the entrance and exit lines
+        ax.set_title(title, fontsize=25)
+        return ax
+
     def plot_mazes(self, mazes:np.ndarray, title:str, file_dir:str, file_name:str) -> None:
         """
         Plot mazes in a grid
