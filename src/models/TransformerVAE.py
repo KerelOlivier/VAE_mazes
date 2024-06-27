@@ -49,11 +49,11 @@ class TransformerEncoder(IEncoder):
                                                        kernel_size,
                                                        down_sample_factor))
             input_channel = out_channel
-
+        self.blocks = nn.ModuleList(self.blocks)
         # Create the attention middle block
         self.middle = TransformerMidBlock(out_channels[-1],
                                           out_channels[-1],
-                                          layers_per_block,
+                                          1,
                                           num_heads,
                                           down_sample_factor,
                                           kernel_size)
@@ -88,14 +88,14 @@ class TransformerEncoder(IEncoder):
     def sample(self, x, y=None, return_components=False):
         mu, log_var = self.encode(x, y)
 
-        z = self.reparameterize(mu, log_var)
+        z = self.reparameterization(mu, log_var)
 
         if return_components:
             return z, mu, log_var
         return z
 
     def log_prob(self, x, y=None, return_components=False):
-        z, mu, log_var = self.sample(x)
+        z, mu, log_var = self.sample(x, return_components, True)
 
         if return_components:
             return log_normal_diag(z, mu, log_var), z, mu, log_var
@@ -164,13 +164,15 @@ class TransformerDecoder(IDecoder):
         self.input_shape = input_shape
 
         # Conditional linear projection
-        self.con_lin = nn.Linear(conditional_shape[0] * conditional_shape[1] * conditional_shape[2],
-                                 input_shape[0] * input_shape[1] * input_shape[2])
+        in_size = conditional_shape[0] * conditional_shape[1] * conditional_shape[2]
+        out_size = input_shape[0] * input_shape[1] * input_shape[2] // 2
+
+        self.con_lin = nn.Linear(in_size, out_size)
 
         # Create Decoder blocks
         self.blocks = []
 
-        in_shape = self.input_shape
+        in_shape = (self.input_shape[0]//2, self.input_shape[1], self.input_shape[2])
         for shape in output_shapes:
             self.blocks.append(DecoderBlock(in_channels=in_shape[0],
                                             out_channels=shape[0],
@@ -179,21 +181,26 @@ class TransformerDecoder(IDecoder):
                                             output_shape=(shape[1], shape[2])
                                             ))
             in_shape = shape
+        self.blocks = nn.ModuleList(self.blocks)
 
     def decode(self, z, y=None):
         # Add conditional
         if y is not None:
-            z += self.con_lin(y)
+            # reshape
+            y = torch.flatten(y, 1)
+            tmp = self.con_lin(y)
+            z += tmp
 
         # Reshape z
-        z = self.reshape(z.shape[0], self.input_shape[0], self.input_shape[1], self.input_shape[2])
+        z = torch.reshape(z, (z.shape[0], self.input_shape[0]//2, self.input_shape[1], self.input_shape[2]))
+
+
 
         # Run decoder
         for block in self.blocks:
-            z = block.decode(z)
+            z = block(z)
 
         z = torch.sigmoid(z)
-
         return z
 
     def sample(self, z, y=None):
@@ -232,7 +239,8 @@ class DecoderBlock(nn.Module):
         self.output_shape = output_shape
 
         self.res1 = ResidualBlock(self.in_channels, self.out_channels, self.kernel_size)
-        self.blocks = [ResidualBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)]
+        self.blocks = nn.ModuleList(
+            [ResidualBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)])
         self.up_sample = UpSample2D(self.out_channels, output_shape=self.output_shape, kernel_size=3)
 
     def forward(self, x):
@@ -291,19 +299,23 @@ class TransformerMidBlock(nn.Module):
         self.residual = ResidualBlock(self.in_channels, self.out_channels)
 
         # remaining blocks that don't scale
-        self.blocks = [
-            (AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor),
-             ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size)) for _ in
-            range(self.num_blocks)]
+        self.att_blocks = nn.ModuleList([
+            AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor) for _ in
+            range(self.num_blocks)])
+        self.res_blocks = nn.ModuleList([
+            ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
+            range(self.num_blocks)])
 
-        def forward(x):
-            x = self.residual(x)
+        self.blocks = zip(self.att_blocks, self.res_blocks)
 
-            for attn, res in self.blocks:
-                x = attn(x)
-                x = res(x)
+    def forward(self, x):
+        x = self.residual(x)
 
-            return x
+        for attn, res in self.blocks:
+            x = attn(x)
+            x = res(x)
+
+        return x
 
 
 ###############
@@ -327,11 +339,8 @@ class ResidualBlock(nn.Module):
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
 
     def forward(self, x):
-        print(next(self.parameters()).is_cuda)
-        print("x:", x.device, self.in_channels, self.out_channels)
         assert x.shape[1] == self.in_channels
         z = self.conv_con(x)  # residual
-        print("z:", z.device)
         y = self.conv1(x)
         y = y.relu()
         y = self.conv2(y)
@@ -375,12 +384,14 @@ class AttentionBlock(nn.Module):
         residual = x
         batch, channel, height, width = x.shape
 
+        x = x.view(batch, channel, width*height)
+
         # Calculate the query, key and value projections
         query = self.heads_to_batch_dim(self.q(x))
         key = self.heads_to_batch_dim(self.k(x))
         value = self.heads_to_batch_dim(self.v(x))
 
-        scale = 1 / np.sqrt(self.channels, self.num_heads)
+        scale = 1 / np.sqrt(self.channels/ self.num_heads)
 
         attention_scores = torch.baddbmm(
             torch.empty(
