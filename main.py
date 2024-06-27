@@ -34,7 +34,7 @@ def main():
         loss_fn = None
     )
 
-    trainer.train_loop(n_epochs=training_params['num_epochs'], step=trainer.auto_encode_step, model_name=training_params['model_name'])
+    trainer.train_loop(n_epochs=training_params['num_epochs'], step=trainer.auto_encode_step, model_name=training_params['model_name'], **training_params['annealer_params'])
 
 if __name__ == "__main__":
     main()

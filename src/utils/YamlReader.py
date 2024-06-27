@@ -105,4 +105,5 @@ class YamlReader:
         """
         opt = YamlReader.OPTIMIZER_DICT[oc["training"]["optimizer"]]
         opt = opt(model.parameters(), **oc["training"]["optimizer_params"])
-        return {"batch_size": oc["training"]["batch_size"], "optimizer": opt, "num_epochs": oc["training"]["num_epochs"], "model_name": oc["training"]["model_name"]}
+        annealer_params = oc["training"]["annealer_params"]
+        return {"batch_size": oc["training"]["batch_size"], "optimizer": opt, "num_epochs": oc["training"]["num_epochs"], "model_name": oc["training"]["model_name"], "annealer_params": annealer_params}
