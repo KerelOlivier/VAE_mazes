@@ -188,3 +188,23 @@ def aggr_average_shortest_path_length(mazes, aggr='sum', **kwargs):
         return lengths
     elif aggr == 'mean':
         return lengths / mazes.shape[0]
+
+def aggr_ratio_straight_to_curl_paths(mazes, aggr='mean', **kwargs):
+    """
+    Compute the ratio of straight paths to curl paths in a dataset of mazes
+
+    Args:
+        mazes (np.ndarray): The dataset of mazes to compute the ratio of straight to curl paths of
+        aggr (str): The aggregation function to use ('sum' or 'mean')
+    
+    Returns:
+        float: The ratio of straight paths to curl paths in the dataset
+    """
+    r_s_c = 0
+    for _, maze in enumerate(mazes):
+        r_s_c += ratio_straight_to_curl_paths(maze)
+
+    if aggr == 'sum':
+        return r_s_c
+    elif aggr == 'mean':
+        return r_s_c / mazes.shape[0]

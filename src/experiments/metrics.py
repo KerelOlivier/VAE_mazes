@@ -197,6 +197,46 @@ def keeps_shortest_path(maze:np.ndarray, path:np.ndarray):
         if maze[i, j] == 1:
             return False
     return True
+
+def ratio_straight_to_curl_paths(maze:np.ndarray):
+    """
+    Compute the ratio of straight paths to curl paths in a maze
+
+    Args:
+        maze (np.ndarray): The maze to compute the ratio of straight to curl paths of
+    
+    Returns:
+        float: The ratio of straight paths to curl paths in the maze
+    """
+    straight_paths = 0
+    curl_paths = 0
+    for i in range(1, maze.shape[0]-1):
+        for j in range(1, maze.shape[1]-1):
+            if maze[i, j] == 1:
+                continue
+            straight_path = 0
+            curl_path = 0
+
+            if maze[i-1, j] == 0 and maze[i+1, j] == 0:
+                straight_path += 1
+            if maze[i, j-1] == 0 and maze[i, j+1] == 0:
+                straight_path += 1
+            if 4 - maze[i-1, j] - maze[i+1, j] - maze[i, j-1] - maze[i, j+1] == 1:
+                straight_path += 1
+            
+            if maze[i-1, j] == 0 and maze[i, j-1] == 0:
+                curl_path += 1
+            if maze[i-1, j] == 0 and maze[i, j+1] == 0:
+                curl_path += 1
+            if maze[i+1, j] == 0 and maze[i, j-1] == 0:
+                curl_path += 1
+            if maze[i+1, j] == 0 and maze[i, j+1] == 0:
+                curl_path += 1
+
+            straight_paths += straight_path
+            curl_paths += curl_path
+    
+    return straight_paths / curl_paths
     
 if __name__ == "__main__":
     maze = np.array([[0,1,0,0,0],
