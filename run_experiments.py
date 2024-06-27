@@ -53,19 +53,27 @@ dataset_index = {
 }
 
 def style_experiment(args):
+    """
+    Method to run the style experiment (StyleExperiment class) with the given arguments.
+
+    Args:
+        args: argparse.Namespace; Arguments for the experiment
+    """
     datasets = []
     model_tuples = []
     metrics = []
-
+    # add the metrics to the list
     for metric in args.metrics:
         metrics.append(aggr_metrics[metric])
-
+    # iterate over the datasets
     for d in args.datasets:
+        # for each dataset, create a MazeDataset object
         dataset_config = dataset_configs[d]
         yr = YamlReader(dataset_config)
         oc = yr.read()
         datasets.append(yr.build_datasets(oc)[dataset_index[args.split]])
         models = []
+        # Create a list of model instances for each dataset
         for model_name in args.models:
             yr.set_path(model_configs[model_name])
             model = yr.build_VAE(yr.read())
@@ -75,7 +83,7 @@ def style_experiment(args):
         # turn models list into a tuple
         models = tuple(models)
         model_tuples.append(models)
-        
+    # Run the experiment
     e = StyleExperiment(
         models=model_tuples,
         datasets=datasets,
@@ -87,14 +95,23 @@ def style_experiment(args):
     e.run()
 
 def uncertainty_experiment(args):
+    """
+    Run the uncertainty experiment (UncertaintyExperiment class) with the given arguments.
+
+    Args:
+        args: argparse.Namespace; Arguments for the experiment
+    """
     datasets = []
     model_tuples = []
+    # iterate over the datasets
     for d in args.datasets:
+        # for each dataset, create a MazeDataset object
         dataset_config = dataset_configs[d]
         yr = YamlReader(dataset_config)
         oc = yr.read()
         datasets.append(yr.build_datasets(oc)[dataset_index[args.split]])
         models = []
+        # Create a list of model instances for each dataset
         for model_name in args.models:
             yr.set_path(model_configs[model_name])
             model = yr.build_VAE(yr.read())
@@ -104,7 +121,7 @@ def uncertainty_experiment(args):
         # turn models list into a tuple
         models = tuple(models)
         model_tuples.append(models)
-
+    # Run the experiment
     e = UncertaintyExperiment(
         models=model_tuples,
         datasets=datasets,
@@ -113,14 +130,23 @@ def uncertainty_experiment(args):
     e.run()
 
 def visualizations(args):
+    """
+    Run the visualizations experiment (VisualExperiment class) with the given arguments.
+
+    Args:
+        args: argparse.Namespace; Arguments for the experiment
+    """
     datasets = []
     model_tuples = []
+    # iterate over the datasets
     for d in args.datasets:
+        # for each dataset, create a MazeDataset object
         dataset_config = dataset_configs[d]
         yr = YamlReader(dataset_config)
         oc = yr.read()
         datasets.append(yr.build_datasets(oc)[dataset_index[args.split]])
         models = []
+        # Create a list of model instances for each dataset
         for model_name in args.models:
             yr.set_path(model_configs[model_name])
             model = yr.build_VAE(yr.read())
@@ -130,7 +156,7 @@ def visualizations(args):
         # turn models list into a tuple
         models = tuple(models)
         model_tuples.append(models)
-
+    # Run the experiment
     e = VisualExperiment(
         models=model_tuples,
         datasets=datasets,
@@ -138,7 +164,6 @@ def visualizations(args):
         n=args.n
     )
     e.run()
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -157,7 +182,7 @@ def main():
     parser.add_argument('--output-path', '-o', type=str, required=False, default='results/maze_style_experiment.csv')
     parser.add_argument('--n', '-n', type=int, required=False, default=100)
     args = parser.parse_args()
-
+    # Run the experiment based on the experiment type
     match args.experiment:
         case 'style':
             print(f'Running different style experiment on {args.datasets} datasets with {args.models} models and {len(args.metrics)} metrics.')

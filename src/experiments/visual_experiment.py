@@ -38,40 +38,47 @@ class VisualExperiment:
             "Prim":"prim",
             "FractalTessellation":"fractal"
         }
+        # Iterate over the datasets
         for dataset in self.datasets:
+            # For each dataset, iterate over the models
             for i, models in enumerate(self.models):
+                # For each (tuple of) model(s), generate samples and reconstructions
                 if isinstance(models, tuple):
                     for model in models:
+                        # Make n samples and reconstructions
                         samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                         reconstructions, y, x = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-
+                        # If the samples are 2D (flattened), reshape them to 3D
                         if len(samples.shape) == 2:
                             width = height = int(np.sqrt(samples.shape[-1]))
                             samples = samples.reshape(-1, width, height)
                             reconstructions = reconstructions.reshape(-1, width, height)
-
+                        # Convert the samples and reconstructions to numpy arrays
                         samples = samples.cpu().detach().numpy()
                         reconstructions = reconstructions.cpu().detach().numpy()
 
                         stripped_dataset_name = dataset.name.split(" ")[1]
+                        # Plot the samples, reconstructions and input mazes
                         self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
                         self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                         self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
                 
                 else:
                     model = models[i]
+                    # Make n samples and reconstructions
                     samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                     reconstructions, y, x = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-
+                    # If the samples are 2D (flattened), reshape them to 3D
                     if len(samples.shape) == 2:
                         width = height = int(np.sqrt(samples.shape[-1]))
                         samples = samples.reshape(-1, width, height)
                         reconstructions = reconstructions.reshape(-1, width, height)
-
+                    # Convert the samples and reconstructions to numpy arrays
                     samples = samples.cpu().detach().numpy()
                     reconstructions = reconstructions.cpu().detach().numpy()
 
                     stripped_dataset_name = dataset.name.split(" ")[1]
+                    # Plot the samples, reconstructions and input mazes
                     self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
                     self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                     self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
@@ -112,9 +119,10 @@ class VisualExperiment:
         Returns:
             np.ndarray; The samples
         """
+        # If the model is not conditional, set y to None
         if not model.is_conditional:
             return model.sample(y=None, batch_size=n), None
-        
+        # Select n random samples from the dataset
         random_idx = np.random.choice(np.arange(len(dataset)), size=n)
         Y = []
         for idx in random_idx:
@@ -122,7 +130,7 @@ class VisualExperiment:
             Y.append(y)
         y = torch.stack(Y)
         y = y.to(self.device)
-
+        # Generate n samples, given y (optional)
         samples = model.sample(y=y, batch_size=n)
         return samples, y
 

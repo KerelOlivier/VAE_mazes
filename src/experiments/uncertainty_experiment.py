@@ -39,47 +39,54 @@ class UncertaintyExperiment:
             "Prim":"prim",
             "FractalTessellation":"fractal"
         }
+        # Iterate over the datasets
         for dataset in self.datasets:
+            # For each dataset, iterate over the models
             for i, models in enumerate(self.models):
                 if isinstance(models, tuple):
+                    # For each (tuple of) model(s), generate samples and reconstructions
                     for model in models:
+                        # Make n samples and reconstructions, also compute the uncertainty per pixel
                         samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                         sample_uncertainty = self.uncertainty_per_pixel(samples)
                         reconstructions, _ = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
                         reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions)
-
+                        # If the samples are 2D (flattened), reshape them to 3D
                         if len(samples.shape) == 2:
                             width = height = int(np.sqrt(samples.shape[-1]))
                             samples = samples.reshape(-1, width, height)
                             reconstructions = reconstructions.reshape(-1, width, height)
                             sample_uncertainty = sample_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
                             reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
-
+                        # Convert the probabilities to samples and reconstructions as numpy arrays
                         samples = torch.bernoulli(samples).cpu().detach().numpy()
                         reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
 
                         stripped_dataset_name = dataset.name.split(" ")[1]
+                        # Plot the samples and reconstructions with the uncertainty as the color
                         self.plot_heatmap(samples, sample_uncertainty, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples_uncertainty.png")
                         self.plot_heatmap(reconstructions, reconstruction_uncertainty, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions_uncertainty.png")
                 
                 else:
                     model = models[i]
+                    # Make n samples and reconstructions, also compute the uncertainty per pixel
                     samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                     sample_uncertainty = self.uncertainty_per_pixel(samples).cpu().detach().numpy()
                     reconstructions, _ = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
                     reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions).cpu().detach().numpy()
-
+                    # If the samples are 2D (flattened), reshape them to 3D
                     if len(samples.shape) == 2:
                         width = height = int(np.sqrt(samples.shape[-1]))
                         samples = samples.reshape(-1, width, height)
                         reconstructions = reconstructions.reshape(-1, width, height)
                         sample_uncertainty = sample_uncertainty.reshape(-1, width, height)
                         reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height)
-
+                    # Convert the probabilities to samples and reconstructions as numpy arrays
                     samples = torch.bernoulli(samples).cpu().detach().numpy()
                     reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
 
                     stripped_dataset_name = dataset.name.split(" ")[1]
+                    # Plot the samples and reconstructions with the uncertainty as the color
                     self.plot_heatmap(samples, sample_uncertainty, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples_uncertainty.png")
                     self.plot_heatmap(reconstructions, reconstruction_uncertainty, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions_uncertainty.png")
 
@@ -96,8 +103,7 @@ class UncertaintyExperiment:
         """
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
-
-
+        # Create a grid of the samples
         rows = cells = int(np.sqrt(samples.shape[0]))
         fig, axs = plt.subplots(rows, cells, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
@@ -135,10 +141,11 @@ class UncertaintyExperiment:
         Returns:
             np.ndarray; The samples
         """
+        # Set the final sample layer to the identity function (so we get the probabilities)
         model.decoder.final_sample = nn.Identity()
         if not model.is_conditional:
             return model.sample(y=None, batch_size=n), None
-        
+        # Select n random samples from the dataset
         random_idx = np.random.choice(np.arange(len(dataset)), size=n)
         Y = []
         for idx in random_idx:
@@ -146,7 +153,7 @@ class UncertaintyExperiment:
             Y.append(y)
         y = torch.stack(Y)
         y = y.to(self.device)
-
+        # Generate n samples, given y (optional)
         samples = model.sample(y=y, batch_size=n)
         return samples, y
 
@@ -162,6 +169,7 @@ class UncertaintyExperiment:
         Returns:
             np.ndarray; The reconstructions
         """
+        # Set the final sample layer to the identity function (so we get the probabilities)
         model.decoder.final_sample = nn.Identity()
         # Select n random samples from the dataset
         random_idx = np.random.choice(np.arange(len(dataset)), size=n)
