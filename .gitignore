@@ -6,6 +6,9 @@ results/*
 !results/.gitkeep
 
 figures/*
+!figures/maze_and_path.png
+!figures/maze.png
+!figures/path.png
 !figures/.gitkeep
 !figures/dfs
 figures/dfs/*
