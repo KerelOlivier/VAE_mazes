@@ -168,12 +168,12 @@ def visualizations(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment', '-e', type=str, required=True, choices=['style', 'visualizations', 'uncertainty'])
-    parser.add_argument('--datasets', '-d', type=str, required=False, choices=dataset_configs.keys(), nargs='+',
+    parser.add_argument('--datasets', '-d', type=str, required=False, choices=dataset_configs.keys(), nargs='*',
                         default=list(dataset_configs.keys()))
-    parser.add_argument('--models', '-m', type=str, required=False, nargs='+',
+    parser.add_argument('--models', '-m', type=str, required=False, nargs='*',
                         choices=['FcVAE', 'ConvVAE','TransformerVAE'],
                         default=['FcVAE', 'ConvVAE', 'TransformerVAE'])
-    parser.add_argument('--metrics', '-met', type=str, required=False, nargs='+',
+    parser.add_argument('--metrics', '-met', type=str, required=False, nargs='*',
                         choices=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
                                  'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths'],
                         default=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
