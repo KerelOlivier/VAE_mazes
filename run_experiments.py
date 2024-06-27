@@ -2,6 +2,8 @@ import argparse
 import torch
 
 from src.experiments.maze_style_experiment import StyleExperiment
+from src.experiments.uncertainty_experiment import UncertaintyExperiment
+from src.experiments.visual_experiment import VisualExperiment
 from src.experiments.aggr_metrics import *
 from src.utils import YamlReader
 
@@ -78,10 +80,65 @@ def style_experiment(args):
         models=model_tuples,
         datasets=datasets,
         metrics=metrics,
-        n=100,
+        n=args.n,
+        path=args.output_path
     )
 
     e.run()
+
+def uncertainty_experiment(args):
+    datasets = []
+    model_tuples = []
+    for d in args.datasets:
+        dataset_config = dataset_configs[d]
+        yr = YamlReader(dataset_config)
+        oc = yr.read()
+        datasets.append(yr.build_datasets(oc)[dataset_index[args.split]])
+        models = []
+        for model_name in args.models:
+            yr.set_path(model_configs[model_name])
+            model = yr.build_VAE(yr.read())
+            model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
+            model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            models.append(model)
+        # turn models list into a tuple
+        models = tuple(models)
+        model_tuples.append(models)
+
+    e = UncertaintyExperiment(
+        models=model_tuples,
+        datasets=datasets,
+        path="figures/"
+    )
+    e.run()
+
+def visualizations(args):
+    datasets = []
+    model_tuples = []
+    for d in args.datasets:
+        dataset_config = dataset_configs[d]
+        yr = YamlReader(dataset_config)
+        oc = yr.read()
+        datasets.append(yr.build_datasets(oc)[dataset_index[args.split]])
+        models = []
+        for model_name in args.models:
+            yr.set_path(model_configs[model_name])
+            model = yr.build_VAE(yr.read())
+            model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
+            model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+            models.append(model)
+        # turn models list into a tuple
+        models = tuple(models)
+        model_tuples.append(models)
+
+    e = VisualExperiment(
+        models=model_tuples,
+        datasets=datasets,
+        path="figures/",
+        n=args.n
+    )
+    e.run()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -97,6 +154,8 @@ def main():
                         default=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
                                  'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths'])
     parser.add_argument('--split','-s', type=str, required=False, choices=['train', 'val', 'test'], default='test')
+    parser.add_argument('--output-path', '-o', type=str, required=False, default='results/maze_style_experiment.csv')
+    parser.add_argument('--n', '-n', type=int, required=False, default=100)
     args = parser.parse_args()
 
     match args.experiment:
@@ -105,9 +164,12 @@ def main():
             style_experiment(args)
                     
         case 'visualizations':
-            print('Running visualizations experiment')
+            print(f'Running visualizations on {args.datasets} datasets with {args.models} models.')
+            visualizations(args)
+            
         case 'uncertainty':
-            print('Running uncertainty experiment')
+            print(f'Running uncertainty experiment on {args.datasets} datasets with {args.models} models.')
+            uncertainty_experiment(args)
         case _:
             print('Invalid experiment')
 

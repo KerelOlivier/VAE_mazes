@@ -29,9 +29,9 @@ class StyleExperiment:
         - Has path s -> e
         - Has 1 entrance and 1 exit in the outer wall
         - Keeps path y in final sample
+        - Ratio of straight to curl paths
         - TODO: AVERAGE SHORTEST PATH LENGTH
         - TODO: NUMBER OF CYCLES
-        - TODO: CURL TO STRAIGHT RATIO
 
         Compute the same statistics for n>=1 reconstructions
 
@@ -172,7 +172,7 @@ class StyleExperiment:
                     y = y.view(int(np.sqrt(y.shape[0])), int(np.sqrt(y.shape[0])))
                 X.append(x)
                 Y.append(y)
-                
+
             mazes = np.stack(X)
             mazes = mazes.astype(np.int32)
             mazes = mazes.squeeze(1)

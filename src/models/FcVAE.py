@@ -36,6 +36,7 @@ class FcEncoder(IEncoder):
         for h_dim in self.hidden_dims:
             self.layers.append(nn.Linear(input_size, h_dim))
             self.layers.append(nn.SiLU())
+            self.layers.append(nn.Dropout(p=0.2))
             input_size = h_dim
 
         # Sequential model
@@ -43,12 +44,14 @@ class FcEncoder(IEncoder):
 
         self.in_net = nn.Sequential(
             nn.Linear(self.input_dim, self.hidden_dims[0]),
-            nn.SiLU()
+            nn.SiLU(),
+            nn.Dropout(p=0.2)
         )
 
         self.conditional_net = nn.Sequential(
             nn.Linear(self.input_dim, self.hidden_dims[0]),
-            nn.SiLU()
+            nn.SiLU(),
+            nn.Dropout(p=0.2)
         )
 
     @staticmethod
@@ -173,6 +176,8 @@ class FcDecoder(IDecoder):
 
         self.to_output = nn.Linear(hidden_dims[-1], output_dim)
 
+        self.final_sample = torch.bernoulli
+
     def make_layers(self):
         """
         Make layers for the decoder.
@@ -182,6 +187,7 @@ class FcDecoder(IDecoder):
         for h_dim in self.hidden_dims:
             self.layers.append(nn.Linear(input_size, h_dim))
             self.layers.append(nn.SiLU())
+            self.layers.append(nn.Dropout(p=0.2) if h_dim != self.hidden_dims[-1] else nn.Identity())
             input_size = h_dim
 
         # Sequential model
@@ -189,7 +195,8 @@ class FcDecoder(IDecoder):
 
         self.conditional_net = nn.Sequential(
             nn.Linear(self.output_dim, self.latent_dim),
-            nn.SiLU()
+            nn.SiLU(),
+            nn.Dropout(p=0.2)
         )
 
     def decode(self, z, y=None):
@@ -231,7 +238,7 @@ class FcDecoder(IDecoder):
             x: torch.Tensor; output tensor x
         """
         mu = self.decode(z, y)
-        x_new = torch.bernoulli(mu)
+        x_new = self.final_sample(mu)
 
         return x_new
     
