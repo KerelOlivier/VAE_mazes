@@ -18,9 +18,8 @@ import numpy as np
 
 class TransformerEncoder(IEncoder):
     def __init__(self,
-                 in_channels=1,
-                 out_channels=64,
-                 block_out_channels=(64,),
+                 input_dim=(1, 129, 129),
+                 out_channels=(64,),
                  layers_per_block=2,
                  kernel_size=3,
                  down_sample_factor=2,
@@ -29,32 +28,30 @@ class TransformerEncoder(IEncoder):
         """
         Encoder part for the transformer VAE
         
-        :param in_channels: number of input channels
-        :param out_channels: number of output channels
-        :param block_out_channels: number of output channels for each encoder block
+        :param input_dim: input dimension of the image.(channels, width, height)
+        :param out_channels: output channels for each block
         :param layers_per_block: number of residual blocks per encoder block
         :param kernel_size: kernel size for the residual blocks
         :param down_sample_factor: how fast to down sample between each step
         :param num_heads: number of heads for multi-head attention    
         """
-        self.in_channels = in_channels
+        self.in_dim = input_dim
         self.out_channels = out_channels
         self.layers_per_block = layers_per_block
 
         # Create the encoder blocks
         self.blocks = []
-        if len(block_out_channels) > 0:
-            input_channels = in_channels
-            for output_channels in block_out_channels:
-                self.blocks.append(TransformerEncoderBlock(input_channels,
-                                                           output_channels,
-                                                           layers_per_block,
-                                                           kernel_size,
-                                                           down_sample_factor))
-                input_channels = output_channels
+        input_channel = self.in_dim[0]
+        for out_channel in self.out_channels:
+            self.blocks.append(TransformerEncoderBlock(input_channel,
+                                                       out_channel,
+                                                       layers_per_block,
+                                                       kernel_size,
+                                                       down_sample_factor))
+            input_channel = out_channel
 
         # Create the attention middle block
-        self.middle = TransformerMidBlock(block_out_channels[-1],
+        self.middle = TransformerMidBlock(out_channels[-1],
                                           out_channels,
                                           layers_per_block,
                                           num_heads,
@@ -150,20 +147,19 @@ class DownSample2D(nn.Module):
 class TransformerDecoder(IDecoder):
     def __init__(self,
                  input_shape: (int, int, int),
+                 output_shapes: ((int, int, int),),
                  conditional_shape: (int, int, int),
-                 block_out_channels=(64, 1,),
                  layers_per_block=2,
                  kernel_size=3,
-                 up_sample_factor=2,
                  ):
         """
         :param input_shape: expected input shape of decoder, (channels, height, width)
+        :param output_shape: expected shape of the output image, (channels, height, width)
         :param conditional_shape: shape of the conditional, (channels, height, width)
         :param block_out_channels: number of output channels for
         each decoder block, last one must have the number of channels of your output
         :param layers_per_block: number of residual blocks per decoder block
         :param kernel_size: kernel size of the decoder
-        :param up_sample_factor: up sampling factor
         """
         super().__init__()
 
@@ -175,15 +171,16 @@ class TransformerDecoder(IDecoder):
 
         # Create Decoder blocks
         self.blocks = []
-        if len(block_out_channels) > 0:
-            input_channels = input_shape[0]
-            for output_channels in block_out_channels:
-                self.blocks.append(DecoderBlock(input_channels,
-                                                output_channels,
-                                                layers_per_block,
-                                                kernel_size,
-                                                up_sample_factor))
-                input_channels = output_channels
+
+        in_shape = self.input_shape
+        for shape in output_shapes:
+            self.blocks.append(DecoderBlock(in_channels=in_shape[0],
+                                            out_channels=shape[0],
+                                            layers=layers_per_block,
+                                            kernel_size=kernel_size,
+                                            output_shape=(shape[1], shape[2])
+                                            ))
+            in_shape = shape
 
     def decode(self, z, y=None):
         # Add conditional
@@ -221,24 +218,24 @@ class DecoderBlock(nn.Module):
                  out_channels: int,
                  layers: int = 1,
                  kernel_size: int = 3,
-                 up_sample_factor=2.0):
+                 output_shape=(129, 129)):
         """
         :param in_channels: number of input channels
         :param out_channels: number of output channels
         :param layers: number of residual blocks
         :param kernel_size: kernel size for the residual blocks
-        :param up_sample_factor: factor for up sampling of the input image
+        :param output_shape: shape of the up sampled output (width, height)
         """
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.layers = layers
         self.kernel_size = kernel_size
-        self.up_sample_factor = up_sample_factor
+        self.output_shape = output_shape
 
         self.res1 = ResidualBlock(self.in_channels, self.out_channels, self.kernel_size)
         self.blocks = [ResidualBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)]
-        self.up_sample = UpSample2D(self.out_channels, up_sample_factor=self.up_sample_factor, kernel_size=3)
+        self.up_sample = UpSample2D(self.out_channels, output_shape=self.output_shape, kernel_size=3)
 
     def forward(self, x):
         x = self.res1(x)
@@ -249,18 +246,18 @@ class DecoderBlock(nn.Module):
 
 class UpSample2D(nn.Module):
     # using solutions to checkerboard artifacts discussed here: https://distill.pub/2016/deconv-checkerboard/
-    def __init__(self, channels, up_sample_factor=2.0, kernel_size=3):
+    def __init__(self, channels, output_shape=(129, 129), kernel_size=3):
         """
         Up sample 2D convolution
         :param up_sample_factor: Factor by which to up sample the input image
         """
         super().__init__()
-        self.up_sample_factor = up_sample_factor
+        self.output_shape = output_shape
 
         self.conv = nn.Conv2d(channels, channels, kernel_size=kernel_size, padding=kernel_size // 2)
 
     def forward(self, x):
-        x = interpolate(x, scale_factor=self.up_sample_factor, mode='bilinear')
+        x = interpolate(x, size=self.output_shape, mode='bilinear')
         x = self.conv(x)
         return x
 
