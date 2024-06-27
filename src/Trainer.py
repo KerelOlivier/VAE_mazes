@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from src.models import VAE
 
+import matplotlib.pyplot as plt
 
 class Trainer:
     def __init__(
@@ -55,12 +56,15 @@ class Trainer:
             model_name: str; name of the model to save
         """
         assert self.train_loader != None and self.validation_loader != None
-        
+        losses = []
+        vlosses = []
         # Train for n_epochs, store best validation loss and save model if save_model is True
         best_vloss = 1_000_000
         for epoch in range(1, n_epochs + 1):
             # Use the specified step function to train the model
             avg_loss, avg_vloss = step()
+            losses.append(avg_loss)
+            vlosses.append(avg_vloss)
 
             print(
                 f"Epoch {epoch} -  Training loss: {avg_loss}, Validation loss: {avg_vloss}"
@@ -68,6 +72,11 @@ class Trainer:
             if save_model and avg_vloss < best_vloss:
                 best_vloss = avg_vloss
                 torch.save(self.model.state_dict(), "saved_models/" + model_name)
+        
+        plt.plot(losses, label="Training Loss")
+        plt.plot(vlosses, label="Validation Loss")
+        plt.legend()
+        plt.savefig(f"figures/{model_name[:-3]}_loss.png")
 
     def auto_encode_step(self):
         """
