@@ -12,25 +12,10 @@ figures/*
 !figures/.gitkeep
 !figures/dfs
 figures/dfs/*
-!figures/dfs/.gitkeep
-!figures/prim
-figures/prim/*
-!figures/prim/.gitkeep
-!figures/fractal
-figures/fractal/*
-!figures/fractal/.gitkeep
+!figures/*/.gitkeep
 
 saved_models/*
-!saved_models/dfs
-saved_models/dfs/*
-!saved_models/dfs/.gitkeep
-!saved_models/prim/
-saved_models/prim/*
-!saved_models/prim/.gitkeep
-!saved_models/fractal/
-saved_models/fractal/*
-!saved_models/fractal/.gitkeep
-
+!saved_models/*/.gitkeep
 
 # Created by https://www.toptal.com/developers/gitignore/api/vim,pycharm,visualstudiocode,python,venv
 # Edit at https://www.toptal.com/developers/gitignore?templates=vim,pycharm,visualstudiocode,python,venv

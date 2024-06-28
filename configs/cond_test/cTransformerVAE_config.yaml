@@ -1,10 +1,10 @@
 data:
-  file_path: 'data/10k_Fractal.npy'
+  file_path: 'data/10k_DFS.npy'
 
 dataset:
   # Splits are ~ 60% training, 20% validation, 20% test
   class: MazeDataset
-  name: FractalTessellation
+  name: DFS
   transforms:
     sequential: [ToTensor, Unsqueeze]
 
@@ -43,8 +43,8 @@ model:
     kernel_size: 3
 
 training:
-  model_name: fractal/TransformerVAE.pt
-  batch_size: 8
+  model_name: cond/cTransformerVAE.pt
+  batch_size: 32
   num_epochs: 250
   optimizer: Adam
   optimizer_params:
@@ -54,4 +54,4 @@ training:
     annealing_type: cosine
     beta_0: 0.0
     cyclical: False
-    disable: True
+    disable: False

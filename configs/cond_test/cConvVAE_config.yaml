@@ -1,10 +1,10 @@
 data:
-  file_path: 'data/10k_Fractal.npy'
+  file_path: 'data/10k_DFS.npy'
 
 dataset:
   # Splits are ~ 60% training, 20% validation, 20% test
   class: MazeDataset
-  name: FractalTessellation
+  name: DFS
   transforms:
     sequential: [ToTensor, Unsqueeze]
 
@@ -37,8 +37,8 @@ model:
     output_dim: [16, 1, 65, 65]
 
 training:
-  model_name: fractal/small/ConvVAE.pt
-  batch_size: 16
+  model_name: cond/cConvVAE.pt
+  batch_size: 32
   num_epochs: 250
   optimizer: Adam
   optimizer_params:

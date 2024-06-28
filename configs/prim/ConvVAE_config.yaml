@@ -1,0 +1,51 @@
+data:
+  file_path: 'data/10k_Prim.npy'
+
+dataset:
+  # Splits are ~ 60% training, 20% validation, 20% test
+  class: MazeDataset
+  name: Prim
+  transforms:
+    sequential: [ToTensor, Unsqueeze]
+
+  train_params:
+    idx_range: [0, 6000]
+
+  validation_params:
+    idx_range: [6000, 8000]
+
+  test_params:
+    idx_range: [8000, 10000]
+
+model:
+  class: VAE
+  encoder_class: ConvEncoder
+  decoder_class: ConvDecoder
+  is_conditional: True
+  name: ConvVAE
+  prior_class: MogPrior
+  prior_params:
+    latent_dim: 128
+    num_components: 16
+  encoder_params:
+    input_dim: [16, 1, 65, 65]
+    hidden_dims: [64, 32, 16, 8]
+    latent_dim: 128
+  decoder_params:
+    latent_dim: 128
+    hidden_dims: [8, 16, 32, 64]
+    output_dim: [16, 1, 65, 65]
+
+training:
+  model_name: prim/ConvVAE.pt
+  batch_size: 32
+  num_epochs: 250
+  optimizer: Adam
+  optimizer_params:
+    lr: 0.0001
+    weight_decay: 0.0001
+  annealer_params:
+    annealing_type: cosine
+    beta_0: 0.0
+    cyclical: False
+    disable: False
