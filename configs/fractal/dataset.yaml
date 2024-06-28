@@ -1,5 +1,5 @@
 data:
-  file_path: 'data/100k_Fractal.npy'
+  file_path: 'data/small/10k_Fractal.npy'
 
 dataset:
   # Splits are ~ 60% training, 20% validation, 20% test

@@ -101,22 +101,22 @@ class VisualExperiment:
             if i == 3:
                 break
             idx = np.random.randint(0, len(datasets))
-            maze = datasets[i].__getitem__(idx)[0]
+            maze, path = datasets[i].__getitem__(idx)
             maze = maze.squeeze(0)
-            ax.imshow(maze, cmap='gray')
-            ax.set_title(datasets[i].name.split(" ")[1], fontsize=25)
+            path = path.squeeze(0)
+            ax = self.plot_maze(ax, maze, path, datasets[i].name.split(" ")[1])
 
         maze, path = datasets[0].__getitem__(0)
         maze = maze.squeeze(0)
         path = path.squeeze(0)
-        ax = self.plot_maze_and_path(axs[1, 1], maze, path, datasets[0].name.split(" ")[1], self.path, "example_maze.png")
+        ax = self.plot_maze_and_path(axs[1, 1], maze, path, datasets[0].name.split(" ")[1])
         axs[1, 1] = ax
         
         fig.suptitle(title, fontsize=40)
         plt.savefig(self.path+"cover_page.png")
         plt.close()
 
-    def plot_maze_and_path(self, ax, maze:np.ndarray, path:np.ndarray, title:str, file_dir:str, file_name:str) -> None:
+    def plot_maze(self, ax, maze:np.ndarray, path:np.ndarray, title:str) -> None:
         # plot 1s as black squares
         # and 0s as white squares
         # use inverse cmap to make 0s white
@@ -127,13 +127,13 @@ class VisualExperiment:
             for j in range(1, path.shape[1]-1):
                 if path[i, j] == 1:
                     if path[i-1, j] == 1:
-                        ax.plot([j, j], [i-1, i], 'r')
+                        ax.plot([j, j], [i-1, i], 'w')
                     if path[i+1, j] == 1:
-                        ax.plot([j, j], [i, i+1], 'r')
+                        ax.plot([j, j], [i, i+1], 'w')
                     if path[i, j-1] == 1:
-                        ax.plot([j-1, j], [i, i], 'r')
+                        ax.plot([j-1, j], [i, i], 'w')
                     if path[i, j+1] == 1:
-                        ax.plot([j, j+1], [i, i], 'r')
+                        ax.plot([j, j+1], [i, i], 'w')
 
         # for the entrance and exit points
         # also draw the line to the edge of the maze
@@ -144,7 +144,7 @@ class VisualExperiment:
         for i in range(path.shape[0]):
             if path[i, 0] == 1:
                 entrance = (0, i)
-                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'r')
+                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'w')
             if path[i, -1] == 1:
                 exit_ = (path.shape[1]-1, i)
                 ax.plot([exit_[0], exit_[0]+0.5], [exit_[1], exit_[1]], 'r')
@@ -152,10 +152,57 @@ class VisualExperiment:
         for j in range(path.shape[1]):
             if path[0, j] == 1:
                 entrance = (j, 0)
-                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'r')
+                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'w')
             if path[-1, j] == 1:
                 exit_ = (j, path.shape[0]-1)
-                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'r')
+                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'w')
+        
+        # draw the entrance and exit lines
+        ax.set_title(title, fontsize=25)
+        return ax
+
+    def plot_maze_and_path(self, ax, maze:np.ndarray, path:np.ndarray, title:str) -> None:
+        LW = 4 if maze.shape[0] < 100 else 2
+
+        # plot 1s as black squares
+        # and 0s as white squares
+        # use inverse cmap to make 0s white
+        ax.imshow(maze, cmap='gray_r')
+        # make tuples from neighboring 1's in the path
+        # and plot them as a line
+        for i in range(1, path.shape[0]-1):
+            for j in range(1, path.shape[1]-1):
+                if path[i, j] == 1:
+                    if path[i-1, j] == 1:
+                        ax.plot([j, j], [i-1, i], 'r', linewidth=LW)
+                    if path[i+1, j] == 1:
+                        ax.plot([j, j], [i, i+1], 'r', linewidth=LW)
+                    if path[i, j-1] == 1:
+                        ax.plot([j-1, j], [i, i], 'r', linewidth=LW)
+                    if path[i, j+1] == 1:
+                        ax.plot([j, j+1], [i, i], 'r', linewidth=LW)
+
+        # for the entrance and exit points
+        # also draw the line to the edge of the maze
+        # to make it look more complete
+        
+        # find the entrance and exit points (1s on the edge of the maze)
+
+        for i in range(path.shape[0]):
+            if path[i, 0] == 1:
+                entrance = (0, i)
+                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'r', linewidth=LW)
+            if path[i, -1] == 1:
+                exit_ = (path.shape[1]-1, i)
+                ax.plot([exit_[0], exit_[0]+0.5], [exit_[1], exit_[1]], 'r', linewidth=LW)
+
+        for j in range(path.shape[1]):
+            if path[0, j] == 1:
+                entrance = (j, 0)
+                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'r', linewidth=LW)
+            if path[-1, j] == 1:
+                exit_ = (j, path.shape[0]-1)
+                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'r', linewidth=LW)
         
         # draw the entrance and exit lines
         ax.set_title(title, fontsize=25)

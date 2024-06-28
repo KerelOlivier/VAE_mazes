@@ -9,7 +9,7 @@ import torch
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description="Train a VAE on a dataset.")
-    parser.add_argument("--config-path", type=str, default="configs/FcVAE_config.yaml", help="Path to the configuration file.")
+    parser.add_argument("--config-path", type=str, default="configs/ConvVAE_config.yaml", help="Path to the configuration file.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
