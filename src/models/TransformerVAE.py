@@ -6,7 +6,7 @@ Combination of ResNet (down/up) blocks and Attention blocks.
 import torch
 
 from src.models.VAE import IEncoder, IDecoder
-from torch import nn
+import torch.nn as nn
 from torch.nn.functional import interpolate
 from src.utils.auxiliary import log_normal_diag, log_bernoulli
 import numpy as np
@@ -147,11 +147,12 @@ class DownSample2D(nn.Module):
 
 class TransformerDecoder(IDecoder):
     def __init__(self,
-                 input_shape: (int, int, int),
-                 output_shapes: ((int, int, int),),
-                 conditional_shape: (int, int, int),
+                 input_shape: tuple[int, int, int],
+                 output_shapes: tuple[tuple[int, int, int]],
+                 conditional_shape: tuple[int, int, int],
                  layers_per_block=2,
                  kernel_size=3,
+                 output_dim = tuple[int, int, int]
                  ):
         """
         :param input_shape: expected input shape of decoder, (channels, height, width)
@@ -164,17 +165,12 @@ class TransformerDecoder(IDecoder):
 
         self.input_shape = input_shape
 
-        # Conditional linear projection
-        in_size = conditional_shape[0] * conditional_shape[1] * conditional_shape[2]
-        out_size = input_shape[0] * input_shape[1] * input_shape[2] // 2
-
-        self.con_lin = ResidualBlock(1, 32, kernel_size=3)
-
         # Create Decoder blocks
         self.blocks = []
 
         in_shape = (self.input_shape[0]//2, self.input_shape[1], self.input_shape[2])
         for shape in output_shapes:
+            print(in_shape)
             self.blocks.append(DecoderBlock(in_channels=in_shape[0],
                                             out_channels=shape[0],
                                             layers=layers_per_block,
@@ -183,27 +179,32 @@ class TransformerDecoder(IDecoder):
                                             ))
             in_shape = shape
         self.blocks = nn.ModuleList(self.blocks)
+        self.conditional_conv = ResidualBlock(1, shape[0], kernel_size=3)
 
+        self.to_output = [ResidualBlock(shape[0], shape[0], kernel_size=3) for _ in range(layers_per_block)]
+        self.to_output.append(ResidualBlock(shape[0], output_dim[0], kernel_size=3))
+        self.to_output = nn.Sequential(*self.to_output)
+        
     def decode(self, z, y=None):
         p = z
         print("0|\t", torch.min(p).item(), torch.max(p).item())
-        # Add conditional
-        if y is not None:
-            # reshape
-            y = torch.flatten(y, 1)
-            tmp = self.con_lin(y)
-            z += tmp
-
+        print("ZS",z.shape)
         # Reshape z
         z = torch.reshape(z, (z.shape[0], self.input_shape[0] // 2, self.input_shape[1], self.input_shape[2]))
         p = z
         print("1|\t", torch.min(p).item(), torch.max(p).item())
-
+        print("SZS",z.shape)
         # Run decoder
         for block in self.blocks:
             z = block(z)
             p = z
             print("2|\t", torch.min(p).item(), torch.max(p).item())
+
+        if y is not None:
+            y = self.conditional_conv(y)
+            z += y
+
+        z = self.to_output(z)
 
         p = z
         z = torch.sigmoid(z)
@@ -223,6 +224,7 @@ class TransformerDecoder(IDecoder):
         mu_new = torch.flatten(mu, 1)
         print("MU*:", mu_new.shape, "X*:", x_new.shape)
         print("MU: [", mu_new.min().item(), ", ", mu_new.max().item(), "]")
+        print(x_new.shape, mu_new.shape)
         return log_bernoulli(x_new, mu_new, reduction='sum')
 
     def forward(self, z, y=None):
@@ -253,13 +255,14 @@ class DecoderBlock(nn.Module):
         self.res1 = ResidualBlock(self.in_channels, self.out_channels, self.kernel_size)
         self.blocks = nn.ModuleList(
             [ResidualBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)])
-        self.up_sample = UpSample2D(self.out_channels, output_shape=self.output_shape, kernel_size=3)
+        self.up_sample = UpSample2D(self.in_channels, output_shape=self.output_shape, kernel_size=3)
 
     def forward(self, x):
+        x = self.up_sample(x)
         x = self.res1(x)
         for block in self.blocks:
             x = block(x)
-        return self.up_sample(x)
+        return x
 
 
 class UpSample2D(nn.Module):
@@ -306,13 +309,12 @@ class TransformerMidBlock(nn.Module):
         self.num_heads = num_heads
         self.rescale_output_factor = rescale_output_factor
         self.kernel_size = kernel_size
-
         # First residual block to scale the data
         self.residual = ResidualBlock(self.in_channels, self.out_channels)
 
         # remaining blocks that don't scale
         self.att_blocks = nn.ModuleList([
-            AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor) for _ in
+            nn.Identity() for _ in
             range(self.num_blocks)])
         self.res_blocks = nn.ModuleList([
             ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
@@ -341,7 +343,8 @@ class ResidualBlock(nn.Module):
         kernel_size: kernel size of the embedding convolutional layers
         """
         super().__init__()
-
+        if out_channels < num_groups:
+            num_groups = out_channels
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
@@ -350,24 +353,23 @@ class ResidualBlock(nn.Module):
         self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
 
-        if out_channels < num_groups:
-            num_groups = out_channels
 
         # normalizations
-        self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=self.in_channels)
+        self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=self.out_channels)
         self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=self.out_channels)
 
     def forward(self, x):
         assert x.shape[1] == self.in_channels
         residual = self.conv_con(x)  # residual
+
+        x = self.conv1(x)
         x = self.norm1(x)
         x = nn.functional.silu(x)
 
-        x = self.conv1(x)
+        x = self.conv2(x)
         x = self.norm2(x)
         x = nn.functional.silu(x)
 
-        x = self.conv2(x)
         x += residual
         return x
 
