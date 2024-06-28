@@ -199,7 +199,7 @@ class VAE(nn.Module):
 
 
         reconstruction_loss = self.decoder.log_prob(x=x, y=y, z=z)
-
+        
         kl_divergence = (enc_log_prob - self.prior.log_prob(z)).sum(-1)
 
         kl_divergence *= beta
