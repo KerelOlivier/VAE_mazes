@@ -226,7 +226,7 @@ class VisualExperiment:
         rows = cols = int(np.sqrt(mazes.shape[0]))
         fig, axs = plt.subplots(rows, cols, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
-            ax.imshow(mazes[i], cmap='gray')
+            ax.imshow(mazes[i], cmap='gray_r')
         # Set suptitle size to 20
         fig.suptitle(title, fontsize=20)
         plt.savefig(file_dir+file_name)

@@ -119,7 +119,7 @@ class UncertaintyExperiment:
         rows = cells = int(np.sqrt(samples.shape[0]))
         fig, axs = plt.subplots(rows, cells, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
-            ax.imshow(samples[i], cmap='gray')
+            ax.imshow(samples[i], cmap='gray_r')
             ax.imshow(uncertainty[i], cmap='viridis', alpha=0.5)
         
         # show colorbar
