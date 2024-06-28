@@ -6,7 +6,7 @@ dataset:
   class: MazeDataset
   name: FractalTessellation
   transforms:
-    sequential: [ToTensor, Unsqueeze]
+    sequential: [ToTensor, Flatten]
 
   train_params:
     idx_range: [0, 6000]
@@ -19,26 +19,26 @@ dataset:
 
 model:
   class: VAE
-  encoder_class: ConvEncoder
-  decoder_class: ConvDecoder
+  encoder_class: FcEncoder
+  decoder_class: FcDecoder
   is_conditional: True
-  name: ConvVAE
+  name: FcVAE
   prior_class: MogPrior
   prior_params:
-    latent_dim: 128
+    latent_dim: 64
     num_components: 16
   encoder_params:
-    input_dim: [16, 1, 65, 65]
-    hidden_dims: [64, 32, 16, 8]
-    latent_dim: 128
+    input_dim: 4225
+    hidden_dims: [512, 256, 128]
+    latent_dim: 64
   decoder_params:
-    latent_dim: 128
-    hidden_dims: [8, 16, 32, 64]
-    output_dim: [16, 1, 65, 65]
+    latent_dim: 64
+    hidden_dims: [128, 256, 512]
+    output_dim: 4225
 
 training:
-  model_name: fractal/ConvVAE.pt
-  batch_size: 16
+  model_name: fractal/FcVAE.pt
+  batch_size: 32
   num_epochs: 250
   optimizer: Adam
   optimizer_params:

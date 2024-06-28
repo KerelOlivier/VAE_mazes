@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from src.models import VAE
 from src.Annealer import Annealer
+from src.EarlyStopper import EarlyStopper
 
 import matplotlib.pyplot as plt
 
@@ -47,7 +48,8 @@ class Trainer:
         )
 
     def train_loop(self, n_epochs, step, save_model=True, model_name="unnamed_model.pt",
-                   annealing_type="none", beta_0=1.0, cyclical=False, disable=False):
+                   annealing_type="none", beta_0=1.0, cyclical=False, disable=False,
+                   patience=5, min_delta=0.05):
         """
         Train the model for n_epochs using the specified step function.
 
@@ -58,6 +60,7 @@ class Trainer:
             model_name: str; name of the model to save
         """
         assert self.train_loader != None and self.validation_loader != None
+        early_stopper = EarlyStopper(patience=patience, min_delta=min_delta)
         annealer = Annealer(total_epochs=n_epochs, annealing_type=annealing_type, beta_0=beta_0, cyclical=cyclical, disable=disable)
         losses = []
         vlosses = []
@@ -76,6 +79,10 @@ class Trainer:
             if save_model and avg_vloss < best_vloss:
                 best_vloss = avg_vloss
                 torch.save(self.model.state_dict(), "saved_models/" + model_name)
+                
+            if early_stopper.early_stop(avg_vloss):
+                print("Early stopping...")
+                break
         
         plt.plot(losses, label="Training Loss")
         plt.plot(vlosses, label="Validation Loss")
