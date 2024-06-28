@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
     
 class ConvBlock(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding=1, activation=True, num_groups=4):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, activation=True, num_groups=4):
         """
         Convolutional block with convolutional layer, batch normalization, and activation.
 
