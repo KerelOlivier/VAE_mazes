@@ -5,6 +5,7 @@ from src.models.StandardNormalPrior import StandardNormalPrior
 from src.models.MogPrior import MogPrior
 from src.models.VAE import VAE
 from src.models.FcVAE import FcEncoder, FcDecoder
+from src.models.ConvVAE import ConvEncoder, ConvDecoder
 import torch
 from torchvision.transforms import ToTensor, Compose
 
@@ -27,8 +28,8 @@ class YamlReader:
     DATASET_CLASSES = {"MazeDataset": MazeDataset}
     MODEL_CLASSES = {"VAE": VAE}
     PRIOR_CLASSES = {"StandardNormalPrior": StandardNormalPrior, "MogPrior": MogPrior}
-    ENCODER_CLASSES = {"FcEncoder": FcEncoder}
-    DECODER_CLASSES = {"FcDecoder": FcDecoder}
+    ENCODER_CLASSES = {"FcEncoder": FcEncoder, "ConvEncoder": ConvEncoder}
+    DECODER_CLASSES = {"FcDecoder": FcDecoder, "ConvDecoder": ConvDecoder}
     OPTIMIZER_DICT = {"Adam": torch.optim.Adam}
     DATASET_TRANSFORMS = {"ToTensor": torch.FloatTensor, "Flatten": torch.flatten, "Normalize": torch.nn.functional.normalize, "Compose": torch.nn.Sequential,
                           "Unsqueeze": partial(torch.unsqueeze, dim=0)}
