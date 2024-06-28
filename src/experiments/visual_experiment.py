@@ -162,6 +162,8 @@ class VisualExperiment:
         return ax
 
     def plot_maze_and_path(self, ax, maze:np.ndarray, path:np.ndarray, title:str) -> None:
+        LW = 4 if maze.shape[0] < 100 else 2
+
         # plot 1s as black squares
         # and 0s as white squares
         # use inverse cmap to make 0s white
@@ -172,13 +174,13 @@ class VisualExperiment:
             for j in range(1, path.shape[1]-1):
                 if path[i, j] == 1:
                     if path[i-1, j] == 1:
-                        ax.plot([j, j], [i-1, i], 'r')
+                        ax.plot([j, j], [i-1, i], 'r', linewidth=LW)
                     if path[i+1, j] == 1:
-                        ax.plot([j, j], [i, i+1], 'r')
+                        ax.plot([j, j], [i, i+1], 'r', linewidth=LW)
                     if path[i, j-1] == 1:
-                        ax.plot([j-1, j], [i, i], 'r')
+                        ax.plot([j-1, j], [i, i], 'r', linewidth=LW)
                     if path[i, j+1] == 1:
-                        ax.plot([j, j+1], [i, i], 'r')
+                        ax.plot([j, j+1], [i, i], 'r', linewidth=LW)
 
         # for the entrance and exit points
         # also draw the line to the edge of the maze
@@ -189,18 +191,18 @@ class VisualExperiment:
         for i in range(path.shape[0]):
             if path[i, 0] == 1:
                 entrance = (0, i)
-                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'r')
+                ax.plot([entrance[0]-0.5, entrance[0]], [entrance[1], entrance[1]], 'r', linewidth=LW)
             if path[i, -1] == 1:
                 exit_ = (path.shape[1]-1, i)
-                ax.plot([exit_[0], exit_[0]+0.5], [exit_[1], exit_[1]], 'r')
+                ax.plot([exit_[0], exit_[0]+0.5], [exit_[1], exit_[1]], 'r', linewidth=LW)
 
         for j in range(path.shape[1]):
             if path[0, j] == 1:
                 entrance = (j, 0)
-                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'r')
+                ax.plot([entrance[0], entrance[0]], [entrance[1]-0.5, entrance[1]], 'r', linewidth=LW)
             if path[-1, j] == 1:
                 exit_ = (j, path.shape[0]-1)
-                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'r')
+                ax.plot([exit_[0], exit_[0]], [exit_[1], exit_[1]+0.5], 'r', linewidth=LW)
         
         # draw the entrance and exit lines
         ax.set_title(title, fontsize=25)
