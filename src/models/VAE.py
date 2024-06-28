@@ -205,9 +205,17 @@ class VAE(nn.Module):
         kl_divergence *= beta
 
         if reduction == 'sum':
-            return (kl_divergence - reconstruction_loss).sum()
+            loss = (kl_divergence - reconstruction_loss).sum()
         elif reduction == 'mean':
-            return (kl_divergence - reconstruction_loss).mean()
+            loss = (kl_divergence - reconstruction_loss).mean()
         else:
             raise ValueError('reduction type not supported')
-        
+        if loss < 0:
+            print("WHAT THE ABSOLUTE FUCK?!")
+            print("loss:", loss)
+            print("reconstruction_loss", reconstruction_loss.shape, reconstruction_loss[0])
+            print("kl_divergence", kl_divergence.shape, kl_divergence[0])
+            print("SUM OF KL-DIVERGENCE", kl_divergence.sum())
+            print("SUM OG REC_loss", reconstruction_loss.sum())
+            exit()
+        return loss
