@@ -6,6 +6,7 @@ from src.models.MogPrior import MogPrior
 from src.models.VAE import VAE
 from src.models.FcVAE import FcEncoder, FcDecoder
 from src.models.TransformerVAE import TransformerEncoder, TransformerDecoder
+from src.models.ConvVAE import ConvEncoder, ConvDecoder
 import torch
 from torchvision.transforms import ToTensor, Compose
 
@@ -28,8 +29,8 @@ class YamlReader:
     DATASET_CLASSES = {"MazeDataset": MazeDataset}
     MODEL_CLASSES = {"VAE": VAE}
     PRIOR_CLASSES = {"StandardNormalPrior": StandardNormalPrior, "MogPrior": MogPrior}
-    ENCODER_CLASSES = {"FcEncoder": FcEncoder, "TransformerEncoder": TransformerEncoder}
-    DECODER_CLASSES = {"FcDecoder": FcDecoder, "TransformerDecoder": TransformerDecoder}
+    ENCODER_CLASSES = {"FcEncoder": FcEncoder, "TransformerEncoder": TransformerEncoder, "ConvEncoder": ConvEncoder}
+    DECODER_CLASSES = {"FcDecoder": FcDecoder, "TransformerDecoder": TransformerDecoder, "ConvDecoder": ConvDecoder}
     OPTIMIZER_DICT = {"Adam": torch.optim.Adam}
     DATASET_TRANSFORMS = {"ToTensor": torch.FloatTensor, "Flatten": torch.flatten, "Normalize": torch.nn.functional.normalize, "Compose": torch.nn.Sequential,
                           "Unsqueeze": partial(torch.unsqueeze, dim=0)}
@@ -106,4 +107,5 @@ class YamlReader:
         """
         opt = YamlReader.OPTIMIZER_DICT[oc["training"]["optimizer"]]
         opt = opt(model.parameters(), **oc["training"]["optimizer_params"])
-        return {"batch_size": oc["training"]["batch_size"], "optimizer": opt, "num_epochs": oc["training"]["num_epochs"], "model_name": oc["training"]["model_name"]}
+        annealer_params = oc["training"]["annealer_params"]
+        return {"batch_size": oc["training"]["batch_size"], "optimizer": opt, "num_epochs": oc["training"]["num_epochs"], "model_name": oc["training"]["model_name"], "annealer_params": annealer_params}

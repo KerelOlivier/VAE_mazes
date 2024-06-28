@@ -174,26 +174,29 @@ class StyleExperiment:
                 Y.append(y)
 
             mazes = np.stack(X)
-            mazes = mazes.astype(np.int32)
+            mazes = mazes.astype(np.uint8)
             mazes = mazes.squeeze(1)
             paths = np.stack(Y)
-            paths = paths.astype(np.int32)
+            paths = paths.astype(np.uint8)
             paths = paths.squeeze(1)
         else:
             mazes = mazes.detach().cpu().numpy()
             if len(mazes.shape) == 2:
                 width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
                 mazes = mazes.reshape(-1, width, height)
-                mazes = mazes.astype(np.int32)
-                if len(mazes.shape) == 4:
-                    mazes = mazes.squeeze(1)
+                mazes = mazes.astype(np.uint8)
+            if len(mazes.shape) == 4:
+                mazes = mazes.squeeze(1)
 
-            if paths is not None:
+            if paths is not None and len(paths.shape) == 2:
+                paths = paths.detach().cpu().numpy()
+                width, height = int(np.sqrt(mazes.shape[1])), int(np.sqrt(mazes.shape[1]))
                 paths = paths.detach().cpu().numpy()
                 paths = paths.reshape(-1, width, height)
-                paths = paths.astype(np.int32)
-                if len(paths.shape) == 4:
-                    paths = paths.squeeze(1)
+                paths = paths.astype(np.uint8)
+            elif paths is not None and len(paths.shape) == 4:
+                paths = paths.detach().cpu().numpy()
+                paths = paths.squeeze(1)
 
         # Compute the metrics for the mazes
         row_list = [name]

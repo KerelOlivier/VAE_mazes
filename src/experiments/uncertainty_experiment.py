@@ -58,6 +58,9 @@ class UncertaintyExperiment:
                             reconstructions = reconstructions.reshape(-1, width, height)
                             sample_uncertainty = sample_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
                             reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
+                        else:
+                            sample_uncertainty = sample_uncertainty.cpu().detach().numpy()
+                            reconstruction_uncertainty = reconstruction_uncertainty.cpu().detach().numpy()
                         # Convert the probabilities to samples and reconstructions as numpy arrays
                         samples = torch.bernoulli(samples).cpu().detach().numpy()
                         reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
@@ -81,6 +84,9 @@ class UncertaintyExperiment:
                         reconstructions = reconstructions.reshape(-1, width, height)
                         sample_uncertainty = sample_uncertainty.reshape(-1, width, height)
                         reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height)
+                    else:
+                        sample_uncertainty = sample_uncertainty.cpu().detach().numpy()
+                        reconstruction_uncertainty = reconstruction_uncertainty.cpu().detach().numpy()
                     # Convert the probabilities to samples and reconstructions as numpy arrays
                     samples = torch.bernoulli(samples).cpu().detach().numpy()
                     reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
@@ -101,13 +107,19 @@ class UncertaintyExperiment:
             file_dir: str; The directory to save the plot to
             file_name: str; The name of the file to save the plot to
         """
+        if len(samples.shape) == 4:
+            samples = samples.squeeze(1)
+        
+        if len(uncertainty.shape) == 4:
+            uncertainty = uncertainty.squeeze(1)
+
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         # Create a grid of the samples
         rows = cells = int(np.sqrt(samples.shape[0]))
         fig, axs = plt.subplots(rows, cells, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
-            ax.imshow(samples[i], cmap='gray')
+            ax.imshow(samples[i], cmap='gray_r')
             ax.imshow(uncertainty[i], cmap='viridis', alpha=0.5)
         
         # show colorbar

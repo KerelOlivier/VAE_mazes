@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from src.models import VAE
+from src.Annealer import Annealer
 
 import matplotlib.pyplot as plt
 
@@ -45,7 +46,8 @@ class Trainer:
             self.validation_dataset, batch_size=self.batch_size, shuffle=False
         )
 
-    def train_loop(self, n_epochs, step, save_model=True, model_name="unnamed_model.pt"):
+    def train_loop(self, n_epochs, step, save_model=True, model_name="unnamed_model.pt",
+                   annealing_type="none", beta_0=1.0, cyclical=False, disable=False):
         """
         Train the model for n_epochs using the specified step function.
 
@@ -56,11 +58,13 @@ class Trainer:
             model_name: str; name of the model to save
         """
         assert self.train_loader != None and self.validation_loader != None
+        annealer = Annealer(total_epochs=n_epochs, annealing_type=annealing_type, beta_0=beta_0, cyclical=cyclical, disable=disable)
         losses = []
         vlosses = []
         # Train for n_epochs, store best validation loss and save model if save_model is True
         best_vloss = 1_000_000
         for epoch in range(1, n_epochs + 1):
+            self.beta = annealer.get_beta(epoch)
             # Use the specified step function to train the model
             avg_loss, avg_vloss = step()
             losses.append(avg_loss)
@@ -102,10 +106,10 @@ class Trainer:
 
             if self.model.is_conditional:
                 # For conditional models, pass x and y to the model
-                loss = self.model(x=x, y=y)
+                loss = self.model(x=x, y=y, beta=self.beta)
             else:
                 # For non-conditional models, pass x to the model
-                loss = self.model(x=x)
+                loss = self.model(x=x, beta=self.beta)
 
             loss.backward()
 
@@ -136,10 +140,10 @@ class Trainer:
 
                 if self.model.is_conditional:
                     # For conditional models, pass x and y to the model
-                    vloss = self.model(x=val_x, y=val_y)
+                    vloss = self.model(x=val_x, y=val_y, beta=self.beta)
                 else:
                     # For non-conditional models, pass x to the model
-                    vloss = self.model(x=val_x)
+                    vloss = self.model(x=val_x, beta=self.beta)
 
                 running_vloss += vloss.item()
                 

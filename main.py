@@ -9,7 +9,7 @@ import torch
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description="Train a VAE on a dataset.")
-    parser.add_argument("--config-path", type=str, default="configs/FcVAE_config.yaml", help="Path to the configuration file.")
+    parser.add_argument("--config-path", type=str, default="configs/ConvVAE_config.yaml", help="Path to the configuration file.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,7 +34,7 @@ def main():
         loss_fn = None
     )
 
-    trainer.train_loop(n_epochs=training_params['num_epochs'], step=trainer.auto_encode_step, model_name=training_params['model_name'])
+    trainer.train_loop(n_epochs=training_params['num_epochs'], step=trainer.auto_encode_step, model_name=training_params['model_name'], **training_params['annealer_params'])
 
 if __name__ == "__main__":
     main()

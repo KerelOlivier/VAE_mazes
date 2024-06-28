@@ -168,7 +168,7 @@ class TransformerDecoder(IDecoder):
         in_size = conditional_shape[0] * conditional_shape[1] * conditional_shape[2]
         out_size = input_shape[0] * input_shape[1] * input_shape[2] // 2
 
-        self.con_lin = nn.Linear(in_size, out_size)
+        self.con_lin = ResidualBlock(1, 32, kernel_size=3)
 
         # Create Decoder blocks
         self.blocks = []
@@ -334,7 +334,7 @@ class TransformerMidBlock(nn.Module):
 # Base Blocks #
 ###############
 class ResidualBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3):
+    def __init__(self, in_channels, out_channels, kernel_size=3, num_groups=16):
         """
         in_channels: number of input channels
         out_channels: number of output channels
@@ -349,9 +349,14 @@ class ResidualBlock(nn.Module):
         self.conv1 = nn.Conv2d(self.in_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv2 = nn.Conv2d(self.out_channels, self.out_channels, self.kernel_size, padding=self.kernel_size // 2)
         self.conv_con = nn.Conv2d(self.in_channels, self.out_channels, 1)
+
+        if out_channels < num_groups:
+            num_groups = out_channels
+
         # normalizations
-        self.norm1 = nn.GroupNorm(num_groups=1, num_channels=self.in_channels)
-        self.norm2 = nn.GroupNorm(num_groups=1, num_channels=self.out_channels)
+        self.norm1 = nn.GroupNorm(num_groups=num_groups, num_channels=self.in_channels)
+        self.norm2 = nn.GroupNorm(num_groups=num_groups, num_channels=self.out_channels)
+
     def forward(self, x):
         assert x.shape[1] == self.in_channels
         residual = self.conv_con(x)  # residual
@@ -359,7 +364,7 @@ class ResidualBlock(nn.Module):
         x = nn.functional.silu(x)
 
         x = self.conv1(x)
-        self.norm2(x)
+        x = self.norm2(x)
         x = nn.functional.silu(x)
 
         x = self.conv2(x)
