@@ -126,9 +126,7 @@ class AttentionBlock(nn.Module):
     def forward(self, x):
         residual = x
         batch, channel, height, width = x.shape
-
         x = x.view(batch, channel, width*height)
-
         # Calculate the query, key and value projections
         query = self.heads_to_batch_dim(self.q(x))
         key = self.heads_to_batch_dim(self.k(x))
@@ -174,6 +172,7 @@ class TransformerMidBlock(nn.Module):
                  out_channels,
                  num_blocks,
                  num_heads,
+                 spatial_len,
                  rescale_output_factor: float = 1.0,
                  kernel_size=3):
         """
@@ -195,7 +194,7 @@ class TransformerMidBlock(nn.Module):
 
         # remaining blocks that don't scale
         self.att_blocks = nn.ModuleList([
-            AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor) for _ in
+            AttentionBlock(spatial_len, self.num_heads, rescale_output_factor=self.rescale_output_factor) for _ in
             range(self.num_blocks)])
         self.res_blocks = nn.ModuleList([
             ConvBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
@@ -205,7 +204,6 @@ class TransformerMidBlock(nn.Module):
 
     def forward(self, x):
         x = self.residual(x)
-
         for attn, res in self.blocks:
             x = attn(x)
             x = res(x)
@@ -231,8 +229,6 @@ class TransformerEncoder(IEncoder):
         self.layers = []
         self.make_layers()
 
-        self.make_midblock()
-
         self.to_mu = nn.Sequential(ConvBlock(hidden_dims[-1], hidden_dims[-1], kernel_size=3, stride=1, activation=False),
                                    nn.Flatten())
         self.to_log_var = nn.Sequential(ConvBlock(hidden_dims[-1], hidden_dims[-1], kernel_size=3, stride=1, activation=False),
@@ -252,6 +248,12 @@ class TransformerEncoder(IEncoder):
         # Sequential model
         self.forward_net = nn.Sequential(*self.layers)
 
+        num_down_blocks = len(self.hidden_dims)
+        spatial_len = 2 ** (int(np.floor(np.log2(self.input_dim[3]))) - num_down_blocks)
+        spatial_len *= spatial_len
+
+        self.midblock = TransformerMidBlock(h_dim, h_dim, num_blocks=2, num_heads=4, spatial_len=spatial_len)
+
         self.in_net = nn.Sequential(
             ConvBlock(1, self.hidden_dims[0], kernel_size=3, stride=1, activation=True),
             nn.Dropout(p=0.2)
@@ -261,13 +263,7 @@ class TransformerEncoder(IEncoder):
             ConvBlock(1, self.hidden_dims[0], kernel_size=3, stride=1, activation=False),
             nn.Dropout(p=0.2)
         )
-
-    def make_midblock(self):
-        """
-        Make the midblock for the encoder.
-        """
-        self.midblock = TransformerMidBlock(self.hidden_dims[-1], self.hidden_dims[-1], num_blocks=2, num_heads=4)
-
+    
     @staticmethod
     def reparameterization(mu, log_var):
         """
@@ -304,7 +300,7 @@ class TransformerEncoder(IEncoder):
             x = x + y
         
         h = self.forward_net(x)
-        x = self.midblock(x)
+        h = self.midblock(h)
         mu = self.to_mu(h)
         log_var = self.to_log_var(h)
         return mu, log_var
