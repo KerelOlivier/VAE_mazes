@@ -25,23 +25,17 @@ model:
   name: TransformerVAE
   prior_class: MogPrior
   prior_params:
-    latent_dim: 2048
+    latent_dim: 128
     num_components: 16
   encoder_params:
-    input_dim: [1,65,65]
-    out_channels: [256, 128, 64]
-    layers_per_block: 2
-    kernel_size: 3
-    down_sample_factor: 2
-    num_heads: 16
+    input_dim: [16, 1, 65, 65]
+    hidden_dims: [64, 32, 16, 8]
+    latent_dim: 128
   decoder_params:
-    input_shape: [64, 8, 8]
-    output_shapes: [[256, 16, 16],[128, 32, 32], [32, 65, 65]]
-    output_dim: [1, 65, 65]
-    conditional_shape: [1,65,65]
-    layers_per_block: 1
-    kernel_size: 3
-
+    latent_dim: 128
+    hidden_dims: [8, 16, 32, 64]
+    output_dim: [16, 1, 65, 65]
+  
 training:
   model_name: fractal/TransformerVAE.pt
   batch_size: 32
