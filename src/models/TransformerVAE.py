@@ -304,6 +304,7 @@ class TransformerEncoder(IEncoder):
             x = x + y
         
         h = self.forward_net(x)
+        x = self.midblock(x)
         mu = self.to_mu(h)
         log_var = self.to_log_var(h)
         return mu, log_var

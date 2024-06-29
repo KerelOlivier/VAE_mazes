@@ -48,4 +48,4 @@ training:
     annealing_type: cosine
     beta_0: 0.0
     cyclical: False
-    disable: False
+    disable: True
