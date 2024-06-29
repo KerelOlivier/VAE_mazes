@@ -40,50 +40,24 @@ class UncertaintyExperiment:
             "FractalTessellation":"fractal"
         }
         # Iterate over the datasets
-        for dataset in self.datasets:
+        for i, dataset in enumerate(self.datasets):
             # For each dataset, iterate over the models
-            for i, models in enumerate(self.models):
-                if isinstance(models, tuple):
-                    # For each (tuple of) model(s), generate samples and reconstructions
-                    for model in models:
-                        # Make n samples and reconstructions, also compute the uncertainty per pixel
-                        samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
-                        sample_uncertainty = self.uncertainty_per_pixel(samples)
-                        reconstructions, _ = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-                        reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions)
-                        # If the samples are 2D (flattened), reshape them to 3D
-                        if len(samples.shape) == 2:
-                            width = height = int(np.sqrt(samples.shape[-1]))
-                            samples = samples.reshape(-1, width, height)
-                            reconstructions = reconstructions.reshape(-1, width, height)
-                            sample_uncertainty = sample_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
-                            reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
-                        else:
-                            sample_uncertainty = sample_uncertainty.cpu().detach().numpy()
-                            reconstruction_uncertainty = reconstruction_uncertainty.cpu().detach().numpy()
-                        # Convert the probabilities to samples and reconstructions as numpy arrays
-                        samples = torch.bernoulli(samples).cpu().detach().numpy()
-                        reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
-
-                        stripped_dataset_name = dataset.name.split(" ")[1]
-                        # Plot the samples and reconstructions with the uncertainty as the color
-                        self.plot_heatmap(samples, sample_uncertainty, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples_uncertainty.png")
-                        self.plot_heatmap(reconstructions, reconstruction_uncertainty, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions_uncertainty.png")
-                
-                else:
-                    model = models[i]
+            models = self.models[i]
+            if isinstance(models, tuple):
+                # For each (tuple of) model(s), generate samples and reconstructions
+                for model in models:
                     # Make n samples and reconstructions, also compute the uncertainty per pixel
                     samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
-                    sample_uncertainty = self.uncertainty_per_pixel(samples).cpu().detach().numpy()
+                    sample_uncertainty = self.uncertainty_per_pixel(samples)
                     reconstructions, _ = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-                    reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions).cpu().detach().numpy()
+                    reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions)
                     # If the samples are 2D (flattened), reshape them to 3D
                     if len(samples.shape) == 2:
                         width = height = int(np.sqrt(samples.shape[-1]))
                         samples = samples.reshape(-1, width, height)
                         reconstructions = reconstructions.reshape(-1, width, height)
-                        sample_uncertainty = sample_uncertainty.reshape(-1, width, height)
-                        reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height)
+                        sample_uncertainty = sample_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
+                        reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height).cpu().detach().numpy()
                     else:
                         sample_uncertainty = sample_uncertainty.cpu().detach().numpy()
                         reconstruction_uncertainty = reconstruction_uncertainty.cpu().detach().numpy()
@@ -95,6 +69,32 @@ class UncertaintyExperiment:
                     # Plot the samples and reconstructions with the uncertainty as the color
                     self.plot_heatmap(samples, sample_uncertainty, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples_uncertainty.png")
                     self.plot_heatmap(reconstructions, reconstruction_uncertainty, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions_uncertainty.png")
+            
+            else:
+                model = models[i]
+                # Make n samples and reconstructions, also compute the uncertainty per pixel
+                samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
+                sample_uncertainty = self.uncertainty_per_pixel(samples).cpu().detach().numpy()
+                reconstructions, _ = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
+                reconstruction_uncertainty = self.uncertainty_per_pixel(reconstructions).cpu().detach().numpy()
+                # If the samples are 2D (flattened), reshape them to 3D
+                if len(samples.shape) == 2:
+                    width = height = int(np.sqrt(samples.shape[-1]))
+                    samples = samples.reshape(-1, width, height)
+                    reconstructions = reconstructions.reshape(-1, width, height)
+                    sample_uncertainty = sample_uncertainty.reshape(-1, width, height)
+                    reconstruction_uncertainty = reconstruction_uncertainty.reshape(-1, width, height)
+                else:
+                    sample_uncertainty = sample_uncertainty.cpu().detach().numpy()
+                    reconstruction_uncertainty = reconstruction_uncertainty.cpu().detach().numpy()
+                # Convert the probabilities to samples and reconstructions as numpy arrays
+                samples = torch.bernoulli(samples).cpu().detach().numpy()
+                reconstructions = torch.bernoulli(reconstructions).cpu().detach().numpy()
+
+                stripped_dataset_name = dataset.name.split(" ")[1]
+                # Plot the samples and reconstructions with the uncertainty as the color
+                self.plot_heatmap(samples, sample_uncertainty, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples_uncertainty.png")
+                self.plot_heatmap(reconstructions, reconstruction_uncertainty, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions_uncertainty.png")
 
     def plot_heatmap(self, samples:np.ndarray, uncertainty:np.ndarray, title:str, file_dir:str, file_name:str) -> None:
         """

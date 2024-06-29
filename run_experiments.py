@@ -13,10 +13,23 @@ dataset_configs = {
     'fractal' : 'configs/fractal/dataset.yaml',
 }
 
+
 model_configs = {
-    'FcVAE' : 'configs/FcVAE_config.yaml',
-    'ConvVAE' : 'configs/ConvVAE_config.yaml',
-    'TransformerVAE' : 'configs/TransformerVAE_config.yaml',
+    'dfs' : {
+        'FcVAE' : 'configs/dfs/FcVAE_config.yaml',
+        'ConvVAE' : 'configs/dfs/ConvVAE_config.yaml',
+        'TransformerVAE' : 'configs/dfs/TransformerVAE_config.yaml'
+    },
+    'prim' : {
+        'FcVAE' : 'configs/prim/FcVAE_config.yaml',
+        'ConvVAE' : 'configs/prim/ConvVAE_config.yaml',
+        'TransformerVAE' : 'configs/prim/TransformerVAE_config.yaml'
+    },
+    'fractal' : {
+        'FcVAE' : 'configs/fractal/FcVAE_config.yaml',
+        'ConvVAE' : 'configs/fractal/ConvVAE_config.yaml',
+        'TransformerVAE' : 'configs/fractal/TransformerVAE_config.yaml'
+    }
 }
 
 trained_model_paths = {
@@ -75,7 +88,7 @@ def style_experiment(args):
         models = []
         # Create a list of model instances for each dataset
         for model_name in args.models:
-            yr.set_path(model_configs[model_name])
+            yr.set_path(model_configs[d][model_name])
             model = yr.build_VAE(yr.read())
             model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
             model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -89,7 +102,7 @@ def style_experiment(args):
         datasets=datasets,
         metrics=metrics,
         n=args.n,
-        path=args.output_path
+        path="results/style.csv"
     )
 
     e.run()
@@ -113,7 +126,7 @@ def uncertainty_experiment(args):
         models = []
         # Create a list of model instances for each dataset
         for model_name in args.models:
-            yr.set_path(model_configs[model_name])
+            yr.set_path(model_configs[d][model_name])
             model = yr.build_VAE(yr.read())
             model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
             model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -125,7 +138,7 @@ def uncertainty_experiment(args):
     e = UncertaintyExperiment(
         models=model_tuples,
         datasets=datasets,
-        path="figures/"
+        path=f"figures/"
     )
     e.run()
 
@@ -148,7 +161,8 @@ def visualizations(args):
         models = []
         # Create a list of model instances for each dataset
         for model_name in args.models:
-            yr.set_path(model_configs[model_name])
+            print(f"create vis for:{d},{model_name}")
+            yr.set_path(model_configs[d][model_name])
             model = yr.build_VAE(yr.read())
             model.load_state_dict(torch.load(trained_model_paths[d][model_name]))
             model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
@@ -160,7 +174,7 @@ def visualizations(args):
     e = VisualExperiment(
         models=model_tuples,
         datasets=datasets,
-        path="figures/",
+        path=f"figures/",
         n=args.n
     )
     e.run()

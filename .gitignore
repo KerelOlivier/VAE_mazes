@@ -5,6 +5,9 @@ data/*
 results/*
 !results/.gitkeep
 
+figures_main/
+saved_models_main/
+
 figures/*
 !figures/maze_and_path.png
 !figures/maze.png

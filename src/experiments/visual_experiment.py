@@ -42,32 +42,13 @@ class VisualExperiment:
         if len(self.datasets) == 3:
             self.plot_cover_page(self.datasets)
         # Iterate over the datasets
-        for dataset in self.datasets:
+        for i, dataset in enumerate(self.datasets):
             # For each dataset, iterate over the models
-            for i, models in enumerate(self.models):
-                # For each (tuple of) model(s), generate samples and reconstructions
-                if isinstance(models, tuple):
-                    for model in models:
-                        # Make n samples and reconstructions
-                        samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
-                        reconstructions, y, x = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
-                        # If the samples are 2D (flattened), reshape them to 3D
-                        if len(samples.shape) == 2:
-                            width = height = int(np.sqrt(samples.shape[-1]))
-                            samples = samples.reshape(-1, width, height)
-                            reconstructions = reconstructions.reshape(-1, width, height)
-                        # Convert the samples and reconstructions to numpy arrays
-                        samples = samples.cpu().detach().numpy()
-                        reconstructions = reconstructions.cpu().detach().numpy()
-
-                        stripped_dataset_name = dataset.name.split(" ")[1]
-                        # Plot the samples, reconstructions and input mazes
-                        self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
-                        self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
-                        self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
-                
-                else:
-                    model = models[i]
+            models = self.models[i]
+            # For each (tuple of) model(s), generate samples and reconstructions
+            if isinstance(models, tuple):
+                for model in models:
+                    print(f"VIS: {dataset.name}, {model.name}")
                     # Make n samples and reconstructions
                     samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
                     reconstructions, y, x = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
@@ -85,7 +66,27 @@ class VisualExperiment:
                     self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
                     self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                     self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
-    
+            
+            else:
+                model = models[i]
+                # Make n samples and reconstructions
+                samples, _ = self.make_n_samples(model=model, dataset=dataset, n=self.n)
+                reconstructions, y, x = self.make_n_reconstructions(model=model, dataset=dataset, n=self.n)
+                # If the samples are 2D (flattened), reshape them to 3D
+                if len(samples.shape) == 2:
+                    width = height = int(np.sqrt(samples.shape[-1]))
+                    samples = samples.reshape(-1, width, height)
+                    reconstructions = reconstructions.reshape(-1, width, height)
+                # Convert the samples and reconstructions to numpy arrays
+                samples = samples.cpu().detach().numpy()
+                reconstructions = reconstructions.cpu().detach().numpy()
+
+                stripped_dataset_name = dataset.name.split(" ")[1]
+                # Plot the samples, reconstructions and input mazes
+                self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
+                self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
+                self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
+
     def plot_cover_page(self, datasets:list[MazeDataset], title="Style of maze algorithms") -> None:
         """
         Plot a cover page for the visual experiment
