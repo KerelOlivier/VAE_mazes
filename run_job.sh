@@ -7,10 +7,6 @@
 
 source /home/TUE/20224456/miniconda3/etc/profile.d/conda.sh;
 source activate torch_base;
-echo "Training TransformerVAE"
-python main.py --config-path configs/cond_test/TransformerVAE_config.yaml
-echo "Training cTransformerVAE"
-python main.py --config-path configs/cond_test/cTransformerVAE_config.yaml
 echo "Training ConvVAE"
 python main.py --config-path configs/cond_test/ConvVAE_config.yaml
 echo "Training cConvVAE"
