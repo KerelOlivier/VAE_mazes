@@ -43,7 +43,7 @@ model:
     kernel_size: 3
 
 training:
-  model_name: fractal/TransformerVAE.pt
+  model_name: prim/TransformerVAE.pt
   batch_size: 32
   num_epochs: 250
   optimizer: Adam

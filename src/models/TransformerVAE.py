@@ -10,34 +10,7 @@ import torch.nn as nn
 from torch.nn.functional import interpolate
 from src.utils.auxiliary import log_normal_diag, log_bernoulli
 import numpy as np
-
-
-class ConvBlock(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, num_groups=4):
-        """
-        Convolutional block with convolutional layer, batch normalization, and no activation.
-
-        Args:
-            in_channels: int; Number of input channels
-            out_channels: int; Number of output channels
-            kernel_size: int; Kernel size of the convolutional layer
-            stride: int; Stride of the convolutional layer
-            activation: bool; Flag to include activation function
-        """
-        super(ConvBlock, self).__init__()
-        if num_groups > out_channels:
-            num_groups = out_channels
-        self.conv1 = torch.nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding)
-        self.norm = torch.nn.GroupNorm(num_groups=num_groups, num_channels=out_channels)
-        self.conv2 = torch.nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding)
-        self.norm = torch.nn.GroupNorm(num_groups=num_groups, num_channels=out_channels)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.norm(x)
-        x = self.conv2(x)
-        x = self.norm(x)
-        return x
+from src.models.ConvVAE import ConvBlock
 
 
 #################
@@ -148,9 +121,9 @@ class TransformerEncoderBlock(nn.Module):
         self.kernel_size = kernel_size
         self.down_sample_factor = down_sample_factor
 
-        self.res1 = ResidualBlock(in_channels, out_channels, kernel_size)
+        self.res1 = ConvBlock(in_channels, out_channels, kernel_size)
         self.blocks = nn.ModuleList(
-            [ResidualBlock(out_channels, self.out_channels, kernel_size) for _ in range(layers - 1)])
+            [ConvBlock(out_channels, self.out_channels, kernel_size) for _ in range(layers - 1)])
         self.down_sample = DownSample2D(2)
 
     def forward(self, x):
@@ -214,17 +187,13 @@ class TransformerDecoder(IDecoder):
         self.to_output = nn.Sequential(*self.to_output)
         
     def decode(self, z, y=None):
-        p = z
-
         # Reshape z
         z = torch.reshape(z, (z.shape[0], self.input_shape[0] // 2, self.input_shape[1], self.input_shape[2]))
-        p = z
         
         z = self.latent_conv(z)
         # Run decoder
         for block in self.blocks:
             z = block(z)
-            p = z
 
         if y is not None:
             y = self.conditional_conv(y)
@@ -232,7 +201,6 @@ class TransformerDecoder(IDecoder):
 
         z = self.to_output(z)
 
-        p = z
         z = torch.sigmoid(z)
         return z
 
@@ -274,9 +242,9 @@ class DecoderBlock(nn.Module):
         self.kernel_size = kernel_size
         self.output_shape = output_shape
 
-        self.res1 = ResidualBlock(self.in_channels, self.out_channels, self.kernel_size)
+        self.res1 = ConvBlock(self.in_channels, self.out_channels, self.kernel_size)
         self.blocks = nn.ModuleList(
-            [ResidualBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)])
+            [ConvBlock(self.out_channels, self.out_channels, self.kernel_size) for _ in range(layers - 1)])
         self.up_sample = UpSample2D(self.in_channels, output_shape=self.output_shape, kernel_size=3)
 
     def forward(self, x):
@@ -332,7 +300,7 @@ class TransformerMidBlock(nn.Module):
         self.rescale_output_factor = rescale_output_factor
         self.kernel_size = kernel_size
         # First residual block to scale the data
-        self.residual = ResidualBlock(self.in_channels, self.out_channels)
+        self.residual = ConvBlock(self.in_channels, self.out_channels)
 
         # remaining blocks that don't scale
         self.att_blocks = nn.ModuleList([
@@ -342,7 +310,7 @@ class TransformerMidBlock(nn.Module):
             nn.Identity() for _ in
             range(self.num_blocks)])
         self.res_blocks = nn.ModuleList([
-            ResidualBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
+            ConvBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
             range(self.num_blocks)])
 
         self.blocks = zip(self.att_blocks, self.res_blocks)
