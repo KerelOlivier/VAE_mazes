@@ -197,9 +197,6 @@ class TransformerMidBlock(nn.Module):
         self.att_blocks = nn.ModuleList([
             AttentionBlock(self.out_channels, self.num_heads, rescale_output_factor=self.rescale_output_factor) for _ in
             range(self.num_blocks)])
-        self.att_blocks = nn.ModuleList([
-            nn.Identity() for _ in
-            range(self.num_blocks)])
         self.res_blocks = nn.ModuleList([
             ConvBlock(self.out_channels, self.out_channels, kernel_size=self.kernel_size) for _ in
             range(self.num_blocks)])

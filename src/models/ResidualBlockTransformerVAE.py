@@ -1,4 +1,6 @@
 """
+BROKEN; DO NOT USE
+
 Transformer VAE model.
 
 Combination of ResNet (down/up) blocks and Attention blocks.
