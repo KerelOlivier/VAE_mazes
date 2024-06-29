@@ -246,9 +246,7 @@ class TransformerDecoder(IDecoder):
         mu = self.decode(z, y)
         x_new = torch.flatten(x, 1)
         mu_new = torch.flatten(mu, 1)
-        print("MU*:", mu_new.shape, "X*:", x_new.shape)
-        print("MU: [", mu_new.min().item(), ", ", mu_new.max().item(), "]")
-        print(x_new.shape, mu_new.shape)
+        
         return log_bernoulli(x_new, mu_new, reduction='sum')
 
     def forward(self, z, y=None):
