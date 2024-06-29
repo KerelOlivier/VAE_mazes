@@ -6,7 +6,7 @@
 #SBATCH --output=R-%x.%j.out
 
 source /home/TUE/20224456/miniconda3/etc/profile.d/conda.sh;
-source conda activate torch_base;
+source activate torch_base;
 echo "Training TransformerVAE"
 python main.py --config-path configs/cond_test/TransformerVAE_config.yaml
 echo "Training cTransformerVAE"
