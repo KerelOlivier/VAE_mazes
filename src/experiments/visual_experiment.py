@@ -228,7 +228,7 @@ class VisualExperiment:
         if rows == cols == 1:
             fig, ax = plt.subplots(1, 1, figsize=(20, 20))
             ax.imshow(mazes[0], cmap='gray_r')
-            ax.set_title(title, fontsize=20)
+            ax.set_title(title, fontsize=40)
             plt.savefig(file_dir+file_name)
             plt.close()
             return
