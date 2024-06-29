@@ -225,6 +225,13 @@ class VisualExperiment:
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         rows = cols = int(np.sqrt(mazes.shape[0]))
+        if rows == cols == 1:
+            fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+            ax.imshow(mazes[0], cmap='gray_r')
+            ax.set_title(title, fontsize=20)
+            plt.savefig(file_dir+file_name)
+            plt.close()
+            return
         fig, axs = plt.subplots(rows, cols, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
             ax.imshow(mazes[i], cmap='gray_r')

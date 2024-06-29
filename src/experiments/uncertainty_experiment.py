@@ -117,6 +117,15 @@ class UncertaintyExperiment:
             os.makedirs(file_dir)
         # Create a grid of the samples
         rows = cells = int(np.sqrt(samples.shape[0]))
+        if rows == cells == 1:
+            fig, axs = plt.subplots(1, 1, figsize=(20, 20))
+            axs.imshow(samples[0], cmap='gray_r')
+            axs.imshow(uncertainty[0], cmap='viridis', alpha=0.5)
+            fig.colorbar(axs.imshow(uncertainty[0], cmap='viridis', alpha=0.5), ax=axs, orientation='horizontal', fraction=0.05, pad=0.05)
+            fig.suptitle(title, fontsize=20)
+            plt.savefig(file_dir+file_name)
+            plt.close()
+            return
         fig, axs = plt.subplots(rows, cells, figsize=(20, 20))
         for i, ax in enumerate(axs.flat):
             ax.imshow(samples[i], cmap='gray_r')
