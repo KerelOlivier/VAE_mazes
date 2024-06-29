@@ -169,7 +169,7 @@ def aggr_keeps_shortest_path(mazes, paths, aggr='mean', **kwargs):
     elif aggr == 'mean':
         return n_kept / mazes.shape[0]
     
-def aggr_average_shortest_path_length(mazes, aggr='sum', **kwargs):
+def aggr_average_shortest_path_length(mazes, aggr='mean', **kwargs):
     """
     Compute the average shortest path length of a dataset of mazes
 

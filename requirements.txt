@@ -2,3 +2,4 @@ torch
 numpy
 omegaconf
 pygame
+networkx

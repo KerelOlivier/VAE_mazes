@@ -66,7 +66,7 @@ class VisualExperiment:
                     self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
                     self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                     self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
-            
+                    
             else:
                 model = models[i]
                 # Make n samples and reconstructions
@@ -86,7 +86,7 @@ class VisualExperiment:
                 self.plot_mazes(samples, f"{model.name} samples on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_samples.png")
                 self.plot_mazes(reconstructions, f"{model.name} reconstructions on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_reconstructions.png")
                 self.plot_mazes(x.cpu().detach().numpy(), f"{model.name} input mazes on {dataset.name}", self.path+f"{dataset_dir_lookup[stripped_dataset_name]}/", f"{model.name}_input_mazes.png")
-
+                
     def plot_cover_page(self, datasets:list[MazeDataset], title="Style of maze algorithms") -> None:
         """
         Plot a cover page for the visual experiment
@@ -266,6 +266,64 @@ class VisualExperiment:
         # Generate n samples, given y (optional)
         samples = model.sample(y=y, batch_size=n)
         return samples, y
+
+    def count_node_degrees(self, maze:np.ndarray) -> np.ndarray:
+        """
+        Count the node degrees in a maze
+
+        Args:
+            maze: np.ndarray; The maze to count the node degrees in
+
+        Returns:
+            np.ndarray; The node degrees
+        """
+        node_degrees_count = np.zeros(5)
+        for i in range(1, maze.shape[0]-1):
+            for j in range(1, maze.shape[1]-1):
+                if maze[i, j] == 1:
+                    continue
+                neighbors = 4 - maze[i-1, j] - maze[i+1, j] - maze[i, j-1] - maze[i, j+1]
+                node_degrees_count[neighbors] += 1
+        return node_degrees_count
+
+    def aggr_node_distribution(self, dataset:MazeDataset, n=100):
+        if isinstance(dataset, MazeDataset):
+            mazes = dataset[:, 0]
+            # pick n random mazes
+            mazes = mazes[:n]
+        else:
+            mazes = dataset
+        
+        node_degrees = np.zeros(5)
+        for i, maze in enumerate(mazes):
+            node_degrees += self.count_node_degrees(maze)
+        return node_degrees
+    
+    def plot_node_distribution(self, ground_truth, model_samples_tuple, title:str, file_dir:str, file_name:str) -> None:
+        """
+        Plot the node distribution
+
+        Args:
+            ground_truth: np.ndarray; The ground truth node distribution
+            model_samples: np.ndarray; The node distribution of the model samples
+            title: str; The title of the plot
+            file_dir: str; The directory to save the plot to
+            file_name: str; The name of the file to save the plot to
+        """
+        # plt.barh(x_axis, list(x_gt), 0.4, label="Ground truth", color="#83cbeb")
+        # plt.barh(x_axis+.4, list(x_fc), 0.4, label="Fc VAE", color="#b4e4a2")
+        # plt.barh(x_axis+.8, list(x_cn), 0.4, label="Conv VAE", color="#ff7c80")
+        # plt.barh(x_axis+1.2, list(x_at), 0.4, label="Transformer VAE", color="#7a4983")
+        colors = ["#83cbeb", "#b4e4a2", "#ff7c80", "#7a4983"]
+        models = ["Fc VAE", "Conv VAE", "Transformer VAE"]
+        x_axis = np.arange(5)
+        plt.bar(x_axis, ground_truth, 0.2, label="Ground truth", color="#83cbeb")
+        for i, model_samples in enumerate(model_samples_tuple):
+            plt.bar(x_axis+.2*(i+1), model_samples, 0.2, label=models[i], color=colors[i+1])
+        plt.title(title)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.savefig(file_dir+file_name)
+        plt.close()
 
     def make_n_reconstructions(self, model:nn.Module, dataset:MazeDataset, n:int=16, return_ground_truth=True) -> np.ndarray:
         """

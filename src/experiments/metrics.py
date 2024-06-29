@@ -1,4 +1,5 @@
 import numpy as np
+import networkx as nx
 from collections import deque
 
 
@@ -162,8 +163,22 @@ def average_shortest_path_length(maze:np.ndarray):
     Returns:
         float: The average shortest path length in the maze
     """
-    # TODO: @KerelOlivier
-    return 0
+
+    G = nx.Graph()
+    for i in range(1, maze.shape[0]-1):
+        for j in range(1, maze.shape[1]-1):
+            if maze[i, j] == 1:
+                continue
+            if maze[i-1, j] == 0:
+                G.add_edge((i, j), (i-1, j))
+            if maze[i+1, j] == 0:
+                G.add_edge((i, j), (i+1, j))
+            if maze[i, j-1] == 0:
+                G.add_edge((i, j), (i, j-1))
+            if maze[i, j+1] == 0:
+                G.add_edge((i, j), (i, j+1))
+    
+    return nx.average_shortest_path_length(G)
 
 def cycles(maze:np.ndarray):
     """
@@ -175,10 +190,22 @@ def cycles(maze:np.ndarray):
     Returns:
         int: The number of cycles in the maze
     """
-    n_cycles = 0
-    # TODO: @KerelOlivier
+    G = nx.Graph()
+    for i in range(1, maze.shape[0]-1):
+        for j in range(1, maze.shape[1]-1):
+            if maze[i, j] == 1:
+                continue
+            if maze[i-1, j] == 0:
+                G.add_edge((i, j), (i-1, j))
+            if maze[i+1, j] == 0:
+                G.add_edge((i, j), (i+1, j))
+            if maze[i, j-1] == 0:
+                G.add_edge((i, j), (i, j-1))
+            if maze[i, j+1] == 0:
+                G.add_edge((i, j), (i, j+1))
     
-    return n_cycles
+    return len(nx.cycle_basis(G))
+
 
 def keeps_shortest_path(maze:np.ndarray, path:np.ndarray):
     """
@@ -238,6 +265,7 @@ def ratio_straight_to_curl_paths(maze:np.ndarray):
     
     return straight_paths / curl_paths
     
+    
 if __name__ == "__main__":
     maze = np.array([[0,1,0,0,0],
                      [0,1,0,1,0],
@@ -258,5 +286,6 @@ if __name__ == "__main__":
     print(node_degrees_histogram(maze))
     print(has_path(maze, (1,1), (3,5)))
     print(count_holes_in_outer_wall(maze))
-    print(cycles(maze))
     print(keeps_shortest_path(maze, path))
+    print(average_shortest_path_length(maze))
+    print(cycles(maze))
