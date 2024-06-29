@@ -85,6 +85,9 @@ class TransformerEncoder(IEncoder):
         # Split output into mu an log_var tensors
         mu, log_var = x.chunk(2, dim=1)
 
+        print("MU", mu.min().item(), mu.max().item())
+        print("LOG_VAR", log_var.min().item(), log_var.max().item())
+
         return mu, log_var
 
     def sample(self, x, y=None, return_components=False):
