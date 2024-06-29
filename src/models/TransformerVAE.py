@@ -198,7 +198,6 @@ class TransformerDecoder(IDecoder):
 
         in_shape = (self.input_shape[0]//2, self.input_shape[1], self.input_shape[2])
         for shape in output_shapes:
-            print(in_shape)
             self.blocks.append(DecoderBlock(in_channels=in_shape[0],
                                             out_channels=shape[0],
                                             layers=layers_per_block,
@@ -216,20 +215,16 @@ class TransformerDecoder(IDecoder):
         
     def decode(self, z, y=None):
         p = z
-        print("0|\t", torch.min(p).item(), torch.max(p).item())
-        print("ZS",z.shape)
 
         # Reshape z
         z = torch.reshape(z, (z.shape[0], self.input_shape[0] // 2, self.input_shape[1], self.input_shape[2]))
         p = z
-        print("1|\t", torch.min(p).item(), torch.max(p).item())
-        print("SZS",z.shape)
+        
         z = self.latent_conv(z)
         # Run decoder
         for block in self.blocks:
             z = block(z)
             p = z
-            print("2|\t", torch.min(p).item(), torch.max(p).item())
 
         if y is not None:
             y = self.conditional_conv(y)
@@ -239,8 +234,6 @@ class TransformerDecoder(IDecoder):
 
         p = z
         z = torch.sigmoid(z)
-        print("3|\t", torch.min(p).item(), torch.max(p).item())
-        print("PROBS", torch.min(z).item(), torch.max(z).item())
         return z
 
     def sample(self, z, y=None):
@@ -251,7 +244,6 @@ class TransformerDecoder(IDecoder):
 
     def log_prob(self, x, z, y=None):
         mu = self.decode(z, y)
-        print("MU:", mu.shape, "X:", x.shape)
         x_new = torch.flatten(x, 1)
         mu_new = torch.flatten(mu, 1)
         print("MU*:", mu_new.shape, "X*:", x_new.shape)

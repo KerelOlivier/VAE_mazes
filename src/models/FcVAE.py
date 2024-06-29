@@ -255,9 +255,7 @@ class FcDecoder(IDecoder):
             log_p: torch.Tensor; log probability - log p(x|z)
         """
         mu = self.decode(z, y)
-        # print range of mu
-        print("MU RANGE")
-        print(mu.min(), mu.max())
+        
         return log_bernoulli(x, mu, reduction='sum')
     
     def forward(self, x, z, y=None):

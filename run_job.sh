@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --time=24:00:00
+#SBATCH -p all
+#SBATCH -N 1
+#SBATCH --tasks-per-node 1
+#SBATCH --output=R-%x.%j.out
+
+source /home/TUE/20224456/miniconda3/etc/profile.d/conda.sh;
+source conda activate torch_base;
+python main.py --config-path configs/cond_test/cConvVAE_config.yaml
+python main.py --config-path configs/cond_test/cFcVAE_config.yaml
+python main.py --config-path configs/cond_test/cTransformerVAE_config.yaml
+
+python main.py --config-path configs/cond_test/ConvVAE_config.yaml
+python main.py --config-path configs/cond_test/FcVAE_config.yaml
+python main.py --config-path configs/cond_test/TransformerVAE_config.yaml
