@@ -143,9 +143,9 @@ class StyleExperiment:
         y = y.to(self.device)
         # If the model is not conditional, set y to None
         if not model.is_conditional:
-            y = None
+            in_y = None
         # Reconstruct the samples
-        reconstructions = model.auto_encode(x=x, y=y)
+        reconstructions = model.auto_encode(x=x, y=in_y)
         return reconstructions, y
 
     def compute_stats(self, mazes:np.ndarray | MazeDataset, paths:np.ndarray | None, metrics, name:str=None, **kwargs):

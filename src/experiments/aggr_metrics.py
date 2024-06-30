@@ -137,8 +137,6 @@ def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
     Returns:
         float: The number of mazes with a path from the start to the goal
     """
-    if paths is None:
-        return -1
     n_paths = 0
     for i, maze in enumerate(mazes):
         # start id and target id are always on the outer wall
@@ -149,7 +147,7 @@ def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
         outer_wall_mask[:, -1] = 1
 
         # find start and target id by looking where paths[i] == 1 and outer_wall_mask == 1
-        exits = np.where(paths[i] * outer_wall_mask == 1)
+        exits = np.where(outer_wall_mask == 1)
         if len(exits) == 0:
             continue
         start_idx = exits[0][0], exits[1][0]
