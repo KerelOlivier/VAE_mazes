@@ -122,7 +122,9 @@ class UncertaintyExperiment:
             axs.imshow(samples[0], cmap='gray_r')
             axs.imshow(uncertainty[0], cmap='viridis', alpha=0.5)
             fig.colorbar(axs.imshow(uncertainty[0], cmap='viridis', alpha=0.5), ax=axs, orientation='horizontal', fraction=0.05, pad=0.05)
-            fig.suptitle(title, fontsize=40)
+            # fig.suptitle(title, fontsize=40)
+            axs.set_yticks([])
+            axs.set_xticks([])
             plt.savefig(file_dir+file_name)
             plt.close()
             return

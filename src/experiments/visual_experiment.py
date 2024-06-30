@@ -36,7 +36,7 @@ class VisualExperiment:
         dataset_dir_lookup = {
             "RandomizedDFS":"dfs",
             "Prim":"prim",
-            "FractalTessellation":"fractal"
+            "FractalTessellation":"fractal",
         }
         # If all datasets are included, plot a cover page
         if len(self.datasets) == 3:
@@ -228,8 +228,10 @@ class VisualExperiment:
         if rows == cols == 1:
             fig, ax = plt.subplots(1, 1, figsize=(20, 20))
             ax.imshow(mazes[0], cmap='gray_r')
-            ax.set_title(title, fontsize=40)
-            plt.savefig(file_dir+file_name)
+            # ax.set_title(title, fontsize=40)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.savefig(file_dir+file_name, bbox_inches='tight')
             plt.close()
             return
         fig, axs = plt.subplots(rows, cols, figsize=(20, 20))
@@ -237,6 +239,7 @@ class VisualExperiment:
             ax.imshow(mazes[i], cmap='gray_r')
         # Set suptitle size to 20
         fig.suptitle(title, fontsize=20)
+        print("saving to:", file_dir+file_name)
         plt.savefig(file_dir+file_name)
         plt.close()
 
