@@ -105,6 +105,26 @@ def aggr_cycles(mazes, aggr='mean', **kwargs):
     elif aggr == 'mean':
         return n_cycles / mazes.shape[0]
     
+def aggr_diameter(mazes, aggr='mean', **kwargs):
+    """
+    Compute the diameter of a dataset of mazes
+
+    Args:
+        mazes (np.ndarray): The dataset of mazes to compute the diameter of
+        aggr (str): The aggregation function to use ('sum' or 'mean')
+    
+    Returns:
+        float: The diameter of the dataset
+    """
+    diameters = 0
+    for _, maze in enumerate(mazes):
+        diameters += diameter(maze)
+
+    if aggr == 'sum':
+        return diameters
+    elif aggr == 'mean':
+        return diameters / mazes.shape[0]
+
 def aggr_has_path(mazes, paths, aggr='mean', **kwargs):
     """
     Check in how many mazes of a dataset there is a path from the start to the goal

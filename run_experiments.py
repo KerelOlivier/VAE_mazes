@@ -57,8 +57,7 @@ aggr_metrics = {
     'aggr_has_path' : aggr_has_path,
     'aggr_keeps_shortest_path' : aggr_keeps_shortest_path,
     'aggr_ratio_straight_to_curl_paths' : aggr_ratio_straight_to_curl_paths,
-    'aggr_cycles': aggr_cycles,
-    'aggr_average_shortest_path_length': aggr_average_shortest_path_length
+    'aggr_cycles': aggr_cycles
 }
 
 dataset_index = {
@@ -192,10 +191,10 @@ def main():
     parser.add_argument('--metrics', '-met', type=str, required=False, nargs='*',
                         choices=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
                                  'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths',
-                                 'aggr_cycles', 'aggr_average_shortest_path_length'],
+                                 'aggr_cycles'],
                         default=['aggr_branching_factor', 'aggr_connected_components', 'aggr_count_holes_in_outer_wall',
                                  'aggr_has_path', 'aggr_keeps_shortest_path', 'aggr_ratio_straight_to_curl_paths',
-                                 'aggr_cycles', 'aggr_average_shortest_path_length'])
+                                 'aggr_cycles'])
     parser.add_argument('--split','-s', type=str, required=False, choices=['train', 'val', 'test'], default='test')
     parser.add_argument('--output-path', '-o', type=str, required=False, default='results/maze_style_experiment.csv')
     parser.add_argument('--n', '-n', type=int, required=False, default=100)

@@ -180,6 +180,32 @@ def average_shortest_path_length(maze:np.ndarray):
     
     return nx.average_shortest_path_length(G)
 
+def diameter(maze:np.ndarray):
+    """
+    Compute the diameter of a maze
+
+    Args:
+        maze (np.ndarray): The maze to compute the diameter of
+    
+    Returns:
+        int: The diameter of the maze
+    """
+    G = nx.Graph()
+    for i in range(1, maze.shape[0]-1):
+        for j in range(1, maze.shape[1]-1):
+            if maze[i, j] == 1:
+                continue
+            if maze[i-1, j] == 0:
+                G.add_edge((i, j), (i-1, j))
+            if maze[i+1, j] == 0:
+                G.add_edge((i, j), (i+1, j))
+            if maze[i, j-1] == 0:
+                G.add_edge((i, j), (i, j-1))
+            if maze[i, j+1] == 0:
+                G.add_edge((i, j), (i, j+1))
+    
+    return nx.approximation.diameter(G)
+
 def cycles(maze:np.ndarray):
     """
     Count the number of cycles in a maze

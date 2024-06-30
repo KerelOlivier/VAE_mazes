@@ -47,6 +47,8 @@ def count_maze_degree_distribution(dataset, subset_ratio=0.01):
     return node_degrees
 
 aggr_metrics = [
+    ('Mean diameter', 'figures/diameter.png', aggr_diameter),
+    ('Mean cycles', 'figures/cycles.png', aggr_cycles),
     ('Mean branching factor', 'figures/branch.png', aggr_branching_factor),
     ('Mean ratio straight to curled paths', 'figures/ratio_straight_curl.png', aggr_ratio_straight_to_curl_paths)
 ]
